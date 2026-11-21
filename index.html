@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giveaway</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050912;--bg2:#0b1630;--card:#0a1020;--text:#f4f6fb;--muted:#8a96b2;--line:#1b2540;--accent:#3b82f6;--danger:#f87171;color-scheme:dark}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,var(--bg2) 0,var(--bg) 340px) no-repeat;color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6}
+.nav{display:flex;justify-content:center;align-items:center;gap:6px;padding:14px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.nav a{color:var(--muted);text-decoration:none;padding:4px 12px;border-radius:99px}
+.nav a.on{color:var(--text);background:#ffffff12}
+.nav b{margin-right:8px}
+.wrap{max-width:640px;margin:0 auto;padding:40px 20px 70px;text-align:center}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:5px 14px;border-radius:99px;border:1px solid var(--line);background:#ffffff08;color:#c7d0e6}
+h1{font-size:32px;margin:18px 0 28px;line-height:1.3}
+.ring{position:relative;width:180px;height:180px;margin:0 auto 24px}
+.ring svg{transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .n{font-size:44px;font-weight:700;line-height:1.1}
+.ring .l{font-size:12px;color:var(--muted)}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.box{border:1px dashed #2a3658;border-radius:16px;padding:28px 20px;text-align:center}
+.box b{display:block;margin-bottom:4px}
+.box span{color:var(--muted);font-size:14px}
+.box.solid{border-style:solid;background:var(--card)}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 18px}
+button:disabled{opacity:.5;cursor:default}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;padding:13px 28px;font-size:16px}
+button.sm{padding:5px 11px;font-size:13px}
+button.del{color:var(--danger)}
+input,textarea{width:100%;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;outline:none;margin-bottom:10px}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:110px;resize:vertical}
+.list{text-decoration:none;color:inherit;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.list:hover{border-color:#2f3d66}
+.list .t{font-weight:600}.list .s{font-size:13px;color:var(--muted)}
+.keyrow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.keyrow code{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;display:block;margin-top:2px}
+.keyrow small{color:var(--muted)}
+.adm{text-align:left}.adm h1{font-size:26px;margin:0 0 4px}.adm h2{font-size:16px;margin:30px 0 12px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.err{color:var(--danger);font-size:14px;min-height:20px;margin-top:6px}
+.row{display:flex;gap:8px;align-items:center}
+.back{color:var(--muted);font-size:14px;text-decoration:none;display:block;text-align:left;margin-bottom:16px}
+.empty{color:var(--muted);padding:40px 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#000;padding:10px 18px;border-radius:99px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="nav" id="nav"></div>
+<div class="wrap" id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInAnonymously,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,collection,doc,onSnapshot,runTransaction,writeBatch,serverTimestamp,updateDoc,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ===== ตั้งค่า: วางค่าจาก Firebase ตรงนี้ ===== */
+const firebaseConfig={apiKey:"",authDomain:"",projectId:"",appId:""};
+const ADMIN_EMAIL="admin@example.com";   // อีเมลแอดมินที่สร้างใน Firebase (รหัสผ่าน = zenith888)
+/* ============================================ */
+
+const app=document.getElementById("app"),nav=document.getElementById("nav");
+const COOLDOWN=24*3600*1000;
+let gws=[],inbox=[],uid=null,isAdmin=false,loaded=false,loadErr="",busy=false,unInbox=null;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toast=m=>{const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2400)};
+const route=()=>{const h=location.hash.slice(1);return h.startsWith("g-")?{p:"g",id:h.slice(2)}:{p:h||"home"}};
+const left=g=>Math.max(0,g.total-g.next);
+const isOpen=g=>g.open&&left(g)>0;
+const cdLeft=()=>Math.max(0,inbox.reduce((a,x)=>Math.max(a,x.at),0)+COOLDOWN-Date.now());
+const fmt=ms=>{let s=Math.ceil(ms/1000);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);s%=60;return[h,m,s].map(n=>String(n).padStart(2,"0")).join(":")};
+const stateMsg=()=>loadErr?`<div class="empty">${esc(loadErr)}</div>`:!loaded?'<div class="empty">Loading...</div>':"";
+
+if(!firebaseConfig.apiKey){
+  document.body.innerHTML='<div class="wrap"><h1>ยังไม่ได้ตั้งค่า Firebase</h1><p class="hint">เปิดไฟล์ index.html แล้วใส่ firebaseConfig และ ADMIN_EMAIL ตามขั้นตอนใน README</p></div>';
+  throw new Error("no firebase config");
+}
+const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb);
+
+function ring(rem,total){
+  const C=2*Math.PI*70,off=total?C*(1-rem/total):C;
+  return `<div class="ring"><svg width="180" height="180" viewBox="0 0 180 180"><circle cx="90" cy="90" r="70" fill="none" stroke="#151d33" stroke-width="10"/><circle cx="90" cy="90" r="70" fill="none" stroke="#3b82f6" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg><div class="in"><div class="n">${rem}</div><div class="l">of ${total} left</div></div></div>`;
+}
+function renderNav(r){
+  nav.innerHTML=`<b>🎁 Giveaway</b><a href="#" class="${r.p==="home"||r.p==="g"?"on":""}">Prizes</a><a href="#inbox" class="${r.p==="inbox"?"on":""}">Inbox${inbox.length?" ("+inbox.length+")":""}</a><a href="#admin" class="${r.p==="admin"?"on":""}">Admin</a>`;
+}
+function viewHome(){
+  const m=stateMsg();if(m)return m;
+  if(!gws.length)return '<div class="empty">No giveaways yet</div>';
+  return '<h1 style="margin-top:0">แจกของรางวัล</h1>'+gws.map(g=>`<a class="list" href="#g-${g.id}"><div><div class="t">${esc(g.title)}</div><div class="s">${esc(g.badge)}</div></div><span class="pill">${isOpen(g)?left(g)+" of "+g.total+" left":"Closed"}</span></a>`).join("");
+}
+function viewG(id){
+  const m=stateMsg();if(m)return m;
+  const g=gws.find(x=>x.id===id);
+  if(!g)return '<a class="back" href="#">← Back</a><div class="empty">Giveaway not found</div>';
+  const open=isOpen(g),wait=cdLeft();
+  const chips=`<span class="pill">⏳ ${open?"Open":"Closed"}</span>`+g.chips.map(c=>`<span class="pill">${esc(c)}</span>`).join("");
+  const body=open&&wait>0?`<div class="box solid"><b>Next claim in <span id="cd">${fmt(wait)}</span></b><span>1 key per day · see your <a href="#inbox" style="color:#60a5fa">Inbox</a></span></div>`:
+    open?`<button class="pri" data-claim="${g.id}">Claim key</button>`:
+    '<div class="box"><b>This giveaway has ended</b><span>It is no longer handing out keys.</span></div>';
+  return `<a class="back" href="#">← All giveaways</a>${g.badge?`<span class="pill">✨ ${esc(g.badge)}</span>`:""}<h1>${esc(g.title)}</h1>${ring(left(g),g.total)}<div class="chips">${chips}</div>${body}`;
+}
+function viewInbox(){
+  const m=stateMsg();if(m)return m;
+  return '<h1 style="margin-top:0">📬 Inbox</h1>'+(inbox.length?inbox.map(x=>`<div class="keyrow"><div><small>${esc(x.title)} · ${new Date(x.at).toLocaleString("th-TH")}</small><code>${esc(x.key)}</code></div><button class="sm" data-copy="${x.id}">Copy</button></div>`).join(""):'<div class="empty">No keys yet. Claim one from the prizes page.</div>');
+}
+const viewLogin=()=>'<div style="max-width:340px;margin:30px auto 0;text-align:left"><h1 style="font-size:22px;margin-top:0">Admin</h1><input id="pw" type="password" placeholder="รหัสผ่าน"><div class="err" id="err"></div><button class="pri" id="go" style="padding:10px 22px;font-size:15px">เข้าสู่ระบบ</button></div>';
+function viewAdmin(){
+  const list=stateMsg()||(gws.length?gws.map(g=>`<div class="keyrow"><div><b>${esc(g.title)}</b><br><small>เหลือ ${left(g)} / ${g.total} · ${g.open?"เปิดอยู่":"ปิดอยู่"}</small></div><div class="row"><button class="sm" data-tg="${g.id}">${g.open?"ปิด":"เปิด"}</button><button class="sm del" data-del="${g.id}">ลบ</button></div></div>`).join(""):'<div class="empty">ยังไม่มีรายการ</div>');
+  return `<div class="adm"><div class="row" style="justify-content:space-between;margin-bottom:16px"><span></span><button class="sm" id="out">ออกจากระบบ</button></div><h1>สร้างงานแจก</h1><p class="hint">เพิ่มของรางวัลเป็นข้อความ (คีย์ / โค้ด)</p><input id="a_t" placeholder="ชื่องาน เช่น แจกฟรี 1 วัน"><input id="a_b" placeholder="ชื่อสินค้า เช่น Zenith Hub"><input id="a_c" placeholder="แท็ก คั่นด้วย , เช่น 1 day key · from first use, Premium"><textarea id="a_k" placeholder="ใส่คีย์/ของรางวัล 1 บรรทัด = 1 ชิ้น"></textarea><div class="row"><button class="pri" id="add" style="padding:10px 22px;font-size:15px">+ สร้าง</button></div><div class="err" id="err"></div><h2>งานทั้งหมด</h2>${list}</div>`;
+}
+function render(){
+  const r=route();renderNav(r);
+  const ae=document.activeElement;
+  if(r.p==="admin"&&isAdmin&&ae&&ae.id&&ae.id.startsWith("a_"))return;
+  if(r.p==="admin"){
+    app.innerHTML=isAdmin?viewAdmin():viewLogin();
+    if(isAdmin){document.getElementById("out").onclick=()=>signOut(auth);document.getElementById("add").onclick=addG}
+    else{const pw=document.getElementById("pw");const go=async()=>{try{await signInWithEmailAndPassword(auth,ADMIN_EMAIL,pw.value)}catch(e){document.getElementById("err").textContent="รหัสไม่ถูกต้อง"}};document.getElementById("go").onclick=go;pw.onkeydown=e=>{if(e.key==="Enter")go()}}
+  }else app.innerHTML=r.p==="g"?viewG(r.id):r.p==="inbox"?viewInbox():viewHome();
+}
+setInterval(()=>{const e=document.getElementById("cd");if(!e)return;const w=cdLeft();w<=0?render():e.textContent=fmt(w)},1000);
+
+async function addG(){
+  const v=i=>document.getElementById(i).value.trim(),err=document.getElementById("err");
+  const keys=document.getElementById("a_k").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if(!v("a_t")||!keys.length){err.textContent="กรอกชื่องานและของรางวัลอย่างน้อย 1 ชิ้น";return}
+  err.textContent="กำลังสร้าง...";
+  try{
+    const ref=doc(collection(db,"giveaways"));
+    await writeBatch(db).set(ref,{title:v("a_t"),badge:v("a_b"),chips:v("a_c").split(",").map(s=>s.trim()).filter(Boolean),total:keys.length,next:0,open:false,createdAt:Date.now()}).commit();
+    for(let i=0;i<keys.length;i+=400){const b=writeBatch(db);keys.slice(i,i+400).forEach((k,j)=>b.set(doc(db,"giveaways",ref.id,"keys",String(i+j)),{v:k}));await b.commit()}
+    await updateDoc(ref,{open:true});
+    ["a_t","a_b","a_c","a_k"].forEach(i=>document.getElementById(i).value="");err.textContent="";document.activeElement.blur();render();
+  }catch(e){err.textContent="บันทึกไม่สำเร็จ: "+(e.code||e.message)}
+}
+async function delG(id){
+  const snap=await getDocs(collection(db,"giveaways",id,"keys"));
+  const docs=snap.docs;
+  for(let i=0;i<docs.length;i+=400){const b=writeBatch(db);docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
+  await writeBatch(db).delete(doc(db,"giveaways",id)).commit();
+}
+async function claim(id){
+  if(busy)return;if(!uid){toast("กำลังเชื่อมต่อ ลองใหม่อีกครั้ง");return}
+  if(cdLeft()>0){toast("Cooldown: "+fmt(cdLeft()));return}
+  busy=true;
+  try{
+    await runTransaction(db,async tx=>{
+      const gref=doc(db,"giveaways",id),g=await tx.get(gref),d=g.data();
+      if(!d||!d.open||d.next>=d.total)throw new Error("ended");
+      const k=await tx.get(doc(db,"giveaways",id,"keys",String(d.next)));
+      tx.update(gref,{next:d.next+1});
+      tx.set(doc(db,"users",uid,"cd","state"),{last:serverTimestamp()});
+      tx.set(doc(collection(db,"users",uid,"inbox")),{gid:id,title:d.title,key:k.data().v,at:serverTimestamp()});
+    });
+    toast("Claimed! Check your Inbox");
+  }catch(e){toast(e.message==="ended"?"Giveaway ended":e.code==="permission-denied"?"Cooldown: รอครบ 1 วันก่อนรับอีกครั้ง":"Failed, try again")}
+  finally{busy=false}
+}
+app.addEventListener("click",async e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const {claim:c,copy:cp,tg,del:d}=b.dataset;
+  if(c)return claim(c);
+  if(cp){const x=inbox.find(i=>i.id===cp);try{await navigator.clipboard.writeText(x.key);toast("Copied")}catch(_){toast("Copy failed")}return}
+  if(!isAdmin)return;
+  try{
+    if(tg){const g=gws.find(i=>i.id===tg);await updateDoc(doc(db,"giveaways",tg),{open:!g.open})}
+    if(d&&confirm("ลบงานนี้?"))await delG(d);
+  }catch(_){toast("ทำรายการไม่สำเร็จ")}
+});
+window.addEventListener("hashchange",()=>{document.activeElement&&document.activeElement.blur();render()});
+render();
+
+onSnapshot(collection(db,"giveaways"),s=>{
+  loaded=true;loadErr="";
+  gws=s.docs.map(d=>{const x=d.data();return{id:d.id,title:x.title||"",badge:x.badge||"",chips:x.chips||[],total:x.total||0,next:x.next||0,open:!!x.open,createdAt:x.createdAt||0}}).sort((a,b)=>b.createdAt-a.createdAt);
+  render();
+},()=>{loadErr="โหลดข้อมูลไม่สำเร็จ (เช็ก Firestore rules)";render()});
+
+onAuthStateChanged(auth,u=>{
+  if(!u){signInAnonymously(auth).catch(()=>{loadErr="เข้าสู่ระบบไม่ได้ (เปิด Anonymous ใน Firebase Auth หรือยัง?)";render()});return}
+  uid=u.uid;isAdmin=u.email===ADMIN_EMAIL;
+  if(unInbox)unInbox();
+  unInbox=onSnapshot(collection(db,"users",uid,"inbox"),s=>{
+    inbox=s.docs.map(d=>{const x=d.data();return{id:d.id,title:x.title||"",key:x.key||"",at:x.at?x.at.toMillis():Date.now()}}).sort((a,b)=>b.at-a.at);render();
+  },()=>{});
+  render();
+});
+</script>
+</body>
+</html>
