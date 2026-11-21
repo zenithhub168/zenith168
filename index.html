@@ -687,6 +687,7 @@
     }
 
     function friendlyError(err) {
+      console.error("[Zenith Error]", err);
       const code = err?.code || "";
       const msg = err?.message || "";
       if (msg === "COOLDOWN" || code === "permission-denied" && msg.includes("cd")) {
