@@ -667,7 +667,8 @@
       lastClaimedResult: null,
       statusMsg: null, // { type: 'error' | 'success', text: string }
       busyClaim: false,
-      busyAdmin: false
+      busyAdmin: false,
+      editingId: null
     };
 
     let auth = null;
@@ -719,6 +720,7 @@
     }
 
     function getCooldownRemainingMs() {
+      if (isAdminUser()) return 0;
       if (!state.lastClaimMs) return 0;
       const diff = (state.lastClaimMs + COOLDOWN_MS) - Date.now();
       return diff > 0 ? diff : 0;
@@ -979,6 +981,7 @@
                   <div class="muted">${esc(g.badge)} • เหลือ ${left}/${total} • ${g.open ? "Open" : "Closed"}</div>
                 </div>
                 <div class="admin-actions">
+                  <button class="btn btn-sm" data-edit="${esc(g.id)}">แก้ไข</button>
                   <button class="btn btn-sm" data-toggle="${esc(g.id)}" data-open="${g.open ? "1" : "0"}">
                     ${g.open ? "ปิดงาน" : "เปิดงาน"}
                   </button>
@@ -997,6 +1000,39 @@
           <div style="display:flex; justify-content:flex-end;">
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
+
+          ${(() => {
+            const editing = state.editingId ? state.giveaways.find((x) => x.id === state.editingId) : null;
+            if (!editing) return "";
+            const chipsText = Array.isArray(editing.chips) ? editing.chips.join(", ") : "";
+            return `
+              <form id="editGiveawayForm" class="form-card" style="border-color: var(--border-strong);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                  <h2 style="margin:0; font-size:1.1rem;">แก้ไขงานแจก</h2>
+                  <button type="button" id="cancelEditBtn" class="btn btn-sm">ยกเลิก</button>
+                </div>
+                <div class="field">
+                  <label for="eTitle">ชื่องานแจก</label>
+                  <input id="eTitle" class="input" value="${esc(editing.title)}" required />
+                </div>
+                <div class="field">
+                  <label for="eBadge">ชื่อสินค้า / ป้าย (Pill)</label>
+                  <input id="eBadge" class="input" value="${esc(editing.badge)}" required />
+                </div>
+                <div class="field">
+                  <label for="eChips">แท็ก (คั่นด้วยคอมมา)</label>
+                  <input id="eChips" class="input" value="${esc(chipsText)}" />
+                </div>
+                <div class="field">
+                  <label for="eAddKeys">เพิ่มคีย์ใหม่ต่อท้าย (1 บรรทัด = 1 ชิ้น, เว้นว่างได้)</label>
+                  <textarea id="eAddKeys" class="textarea" placeholder="ใส่เฉพาะคีย์ที่ต้องการเพิ่ม..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
+                  ${state.busyAdmin ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                </button>
+              </form>
+            `;
+          })()}
 
           <form id="createGiveawayForm" class="form-card">
             <h2 style="margin:0; font-size:1.1rem;">สร้างงานแจกใหม่</h2>
@@ -1081,6 +1117,25 @@
         if (createForm) {
           createForm.addEventListener("submit", handleCreateGiveaway);
         }
+        const editForm = document.getElementById("editGiveawayForm");
+        if (editForm) {
+          editForm.addEventListener("submit", handleEditGiveaway);
+        }
+        const cancelEditBtn = document.getElementById("cancelEditBtn");
+        if (cancelEditBtn) {
+          cancelEditBtn.addEventListener("click", () => {
+            state.editingId = null;
+            render();
+          });
+        }
+        document.querySelectorAll("[data-edit]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            state.editingId = btn.getAttribute("data-edit");
+            state.statusMsg = null;
+            render();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        });
         document.querySelectorAll("[data-toggle]").forEach((btn) => {
           btn.addEventListener("click", () => {
             const gid = btn.getAttribute("data-toggle");
@@ -1108,6 +1163,7 @@
           await signInAnonymously(auth);
         }
         const uid = auth.currentUser.uid;
+        const adminMode = isAdminUser();
         const giveawayRef = doc(db, "giveaways", gid);
         const cdRef = doc(db, "users", uid, "cd", "state");
 
@@ -1120,12 +1176,14 @@
           const total = Number(gData.total) || 0;
           if (next >= total) throw new Error("NO_KEYS");
 
-          const cdSnap = await tx.get(cdRef);
-          if (cdSnap.exists()) {
-            const lastTs = cdSnap.data().last;
-            const lastMs = lastTs?.toMillis ? lastTs.toMillis() : 0;
-            if (lastMs && Date.now() - lastMs < COOLDOWN_MS) {
-              throw new Error("COOLDOWN");
+          if (!adminMode) {
+            const cdSnap = await tx.get(cdRef);
+            if (cdSnap.exists()) {
+              const lastTs = cdSnap.data().last;
+              const lastMs = lastTs?.toMillis ? lastTs.toMillis() : 0;
+              if (lastMs && Date.now() - lastMs < COOLDOWN_MS) {
+                throw new Error("COOLDOWN");
+              }
             }
           }
 
@@ -1137,7 +1195,9 @@
           const inboxRef = doc(collection(db, "users", uid, "inbox"));
 
           tx.update(giveawayRef, { next: next + 1 });
-          tx.set(cdRef, { last: serverTimestamp() });
+          if (!adminMode) {
+            tx.set(cdRef, { last: serverTimestamp() });
+          }
           tx.set(inboxRef, {
             gid,
             title: gData.title || "Giveaway",
@@ -1149,7 +1209,9 @@
         });
 
         state.lastClaimedResult = result;
-        state.lastClaimMs = Date.now();
+        if (!adminMode) {
+          state.lastClaimMs = Date.now();
+        }
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
       } finally {
@@ -1248,6 +1310,68 @@
         await updateDoc(doc(db, "giveaways", gid), { open: nextOpen });
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
+        render();
+      }
+    }
+
+    async function handleEditGiveaway(e) {
+      e.preventDefault();
+      const gid = state.editingId;
+      const target = state.giveaways.find((g) => g.id === gid);
+      if (!target) return;
+
+      const title = document.getElementById("eTitle").value.trim();
+      const badge = document.getElementById("eBadge").value.trim();
+      const chips = document.getElementById("eChips").value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const addKeys = document.getElementById("eAddKeys").value
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (!title || !badge) {
+        state.statusMsg = { type: "error", text: "กรุณากรอกชื่องานแจกและชื่อสินค้า" };
+        render();
+        return;
+      }
+
+      state.statusMsg = null;
+      state.busyAdmin = true;
+      render();
+
+      try {
+        const oldTotal = Number(target.total) || 0;
+        const CHUNK = 450;
+        for (let i = 0; i < addKeys.length; i += CHUNK) {
+          const batch = writeBatch(db);
+          const slice = addKeys.slice(i, i + CHUNK);
+          slice.forEach((val, offset) => {
+            const idx = String(oldTotal + i + offset);
+            batch.set(doc(db, "giveaways", gid, "keys", idx), { v: val });
+          });
+          await batch.commit();
+        }
+
+        await updateDoc(doc(db, "giveaways", gid), {
+          title,
+          badge,
+          chips,
+          total: oldTotal + addKeys.length
+        });
+
+        state.editingId = null;
+        state.statusMsg = {
+          type: "success",
+          text: addKeys.length > 0
+            ? `บันทึกการแก้ไขและเพิ่มคีย์ใหม่ ${addKeys.length} ชิ้นแล้ว`
+            : "บันทึกการแก้ไขงานแจกเรียบร้อยแล้ว"
+        };
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+      } finally {
+        state.busyAdmin = false;
         render();
       }
     }
