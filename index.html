@@ -1020,7 +1020,11 @@
                 <input id="adminPass" type="password" class="input" placeholder="กรอกรหัสผ่าน" required autocomplete="current-password" />
               </div>
               <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
-                ${state.busyAdmin ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                ${state.busyAdmin ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบด้วยรหัสผ่าน"}
+              </button>
+              <div style="text-align:center;" class="muted">หรือ</div>
+              <button type="button" id="adminGoogleLoginBtn" class="btn btn-sm" style="width:100%; padding:11px;">
+                เข้าสู่ระบบด้วย Google (${esc(ADMIN_EMAIL)})
               </button>
             </form>
           </div>
@@ -1236,6 +1240,7 @@
         if (loginForm) {
           loginForm.addEventListener("submit", handleAdminLogin);
         }
+        document.getElementById("adminGoogleLoginBtn")?.addEventListener("click", handleGoogleSignIn);
         const logoutBtn = document.getElementById("adminLogoutBtn");
         if (logoutBtn) {
           logoutBtn.addEventListener("click", handleAdminLogout);
