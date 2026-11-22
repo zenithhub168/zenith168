@@ -598,6 +598,7 @@
         <a href="#inbox" class="nav-link" data-nav="inbox">Inbox</a>
         <a href="#admin" class="nav-link" data-nav="admin">Admin</a>
       </div>
+      <div id="navAuthArea" style="display:flex; align-items:center; gap:8px;"></div>
     </nav>
   </header>
 
@@ -608,9 +609,14 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import {
+      initializeAppCheck,
+      ReCaptchaV3Provider
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
+    import {
       getAuth,
       onAuthStateChanged,
-      signInAnonymously,
+      GoogleAuthProvider,
+      signInWithPopup,
       signInWithEmailAndPassword,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -645,6 +651,9 @@
       appId: "1:269019280004:web:fc586c37568af186d788d1",
       measurementId: "G-HJKP87TT80"
     };
+
+    // (ตัวเลือกเสริม) ใส่ Site Key ของ reCAPTCHA v3 เพื่อเปิด Firebase App Check กันบอท
+    const RECAPTCHA_SITE_KEY = "";
     // =========================================================================
 
     const COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -668,7 +677,10 @@
       statusMsg: null, // { type: 'error' | 'success', text: string }
       busyClaim: false,
       busyAdmin: false,
-      editingId: null
+      editingId: null,
+      viewingKeys: null,
+      search: "",
+      filter: "all"
     };
 
     let auth = null;
@@ -730,6 +742,10 @@
       return Boolean(state.user && !state.user.isAnonymous && state.user.email === ADMIN_EMAIL);
     }
 
+    function isRealSignedIn() {
+      return Boolean(state.user && !state.user.isAnonymous);
+    }
+
     function getRoute() {
       const hash = window.location.hash || "#";
       if (hash === "#inbox") return { name: "inbox" };
@@ -777,7 +793,21 @@
         `;
       }
 
-      const cards = state.giveaways.map((g) => {
+      const q = state.search.trim().toLowerCase();
+      const filtered = state.giveaways.filter((g) => {
+        const total = Number(g.total) || 0;
+        const left = Math.max(0, total - (Number(g.next) || 0));
+        const isOpen = Boolean(g.open) && left > 0;
+        if (state.filter === "open" && !isOpen) return false;
+        if (state.filter === "closed" && isOpen) return false;
+        if (!q) return true;
+        const hay = [g.title, g.badge, ...(Array.isArray(g.chips) ? g.chips : [])]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(q);
+      });
+
+      const cards = filtered.map((g) => {
         const total = Number(g.total) || 0;
         const next = Number(g.next) || 0;
         const left = Math.max(0, total - next);
@@ -804,7 +834,15 @@
           <h1>Prizes & Giveaways</h1>
           <p>เลือกงานแจกที่เปิดอยู่เพื่อรับคีย์ (รับได้ 1 คีย์ทุก 24 ชั่วโมง)</p>
         </div>
-        <div class="grid">${cards}</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center;">
+          <input id="searchInput" class="input" style="flex:1; min-width:200px;" placeholder="ค้นหางานแจก หรือแท็ก..." value="${esc(state.search)}" />
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm" data-filter="all" style="${state.filter === "all" ? "background:rgba(59,130,246,0.35);color:#fff;" : ""}">ทั้งหมด</button>
+            <button class="btn btn-sm" data-filter="open" style="${state.filter === "open" ? "background:rgba(34,197,94,0.28);color:#fff;" : ""}">Open</button>
+            <button class="btn btn-sm" data-filter="closed" style="${state.filter === "closed" ? "background:rgba(239,68,68,0.28);color:#fff;" : ""}">Closed</button>
+          </div>
+        </div>
+        ${filtered.length === 0 ? `<div class="empty-state">ไม่พบงานแจกที่ตรงกับคำค้นหา</div>` : `<div class="grid">${cards}</div>`}
       `;
     }
 
@@ -846,6 +884,12 @@
             <strong>This giveaway has ended</strong>
             It is no longer handing out keys.
           </div>
+        `;
+      } else if (!isRealSignedIn()) {
+        actionHtml = `
+          <button id="googleLoginClaimBtn" class="btn btn-primary">
+            Sign in with Google to Claim
+          </button>
         `;
       } else if (cdMs > 0) {
         actionHtml = `
@@ -909,6 +953,20 @@
     function renderInbox() {
       if (!state.authReady) {
         return `<div class="stack"><div class="empty-state">กำลังตรวจสอบสิทธิ์ผู้ใช้...</div></div>`;
+      }
+      if (!isRealSignedIn()) {
+        return `
+          <div class="page-header">
+            <h1>Inbox</h1>
+            <p>กล่องจดหมายส่วนตัวสำหรับคีย์ที่คุณกดรับ</p>
+          </div>
+          <div class="stack">
+            <div class="empty-state" style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+              <span>กรุณาเข้าสู่ระบบด้วย Google เพื่อดูคีย์ที่ได้รับ</span>
+              <button id="googleLoginInboxBtn" class="btn btn-primary" style="max-width:260px;">Sign in with Google</button>
+            </div>
+          </div>
+        `;
       }
       if (state.inbox.length === 0) {
         return `
@@ -981,6 +1039,7 @@
                   <div class="muted">${esc(g.badge)} • เหลือ ${left}/${total} • ${g.open ? "Open" : "Closed"}</div>
                 </div>
                 <div class="admin-actions">
+                  <button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>
                   <button class="btn btn-sm" data-edit="${esc(g.id)}">แก้ไข</button>
                   <button class="btn btn-sm" data-toggle="${esc(g.id)}" data-open="${g.open ? "1" : "0"}">
                     ${g.open ? "ปิดงาน" : "เปิดงาน"}
@@ -1000,6 +1059,26 @@
           <div style="display:flex; justify-content:flex-end;">
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
+
+          ${(() => {
+            if (!state.viewingKeys) return "";
+            const vk = state.viewingKeys;
+            const joined = vk.keys.join("\n");
+            return `
+              <div class="form-card" style="border-color: var(--border-strong);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h2 style="margin:0; font-size:1.05rem;">คีย์ที่ยังไม่ถูกแจก: ${esc(vk.title)} (${vk.keys.length} ชิ้น)</h2>
+                  <div style="display:flex; gap:8px;">
+                    ${vk.keys.length > 0 ? `<button type="button" class="btn btn-sm" data-copy="${esc(joined)}">Copy All</button>` : ""}
+                    <button type="button" id="closeViewKeysBtn" class="btn btn-sm">ปิด</button>
+                  </div>
+                </div>
+                ${vk.keys.length === 0
+                  ? `<div class="muted">ไม่มีคีย์คงเหลือแล้ว</div>`
+                  : `<textarea class="textarea" readonly>${esc(joined)}</textarea>`}
+              </div>
+            `;
+          })()}
 
           ${(() => {
             const editing = state.editingId ? state.giveaways.find((x) => x.id === state.editingId) : null;
@@ -1063,9 +1142,30 @@
       `;
     }
 
+    function renderNavAuth() {
+      const el = document.getElementById("navAuthArea");
+      if (!el) return;
+      if (!isConfigured || !state.authReady) {
+        el.innerHTML = "";
+        return;
+      }
+      if (isRealSignedIn()) {
+        const label = state.user.email || state.user.displayName || "Account";
+        el.innerHTML = `
+          <span class="muted" style="font-size:0.78rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(label)}">${esc(label)}</span>
+          <button id="navSignOutBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem;">Sign out</button>
+        `;
+        document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
+      } else {
+        el.innerHTML = `<button id="navGoogleBtn" class="btn btn-sm" style="padding:6px 12px; font-size:0.8rem;">Sign in</button>`;
+        document.getElementById("navGoogleBtn")?.addEventListener("click", handleGoogleSignIn);
+      }
+    }
+
     function render() {
       const route = getRoute();
       updateNavActive(route.name);
+      renderNavAuth();
 
       if (!isConfigured) {
         renderConfigMissing();
@@ -1097,7 +1197,34 @@
         });
       });
 
+      if (route.name === "home") {
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => {
+            state.search = e.target.value;
+            const pos = e.target.selectionStart;
+            render();
+            const nextInput = document.getElementById("searchInput");
+            if (nextInput) {
+              nextInput.focus();
+              nextInput.setSelectionRange(pos, pos);
+            }
+          });
+        }
+        document.querySelectorAll("[data-filter]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            state.filter = btn.getAttribute("data-filter");
+            render();
+          });
+        });
+      }
+
+      if (route.name === "inbox") {
+        document.getElementById("googleLoginInboxBtn")?.addEventListener("click", handleGoogleSignIn);
+      }
+
       if (route.name === "detail") {
+        document.getElementById("googleLoginClaimBtn")?.addEventListener("click", handleGoogleSignIn);
         const claimBtn = document.getElementById("claimBtn");
         if (claimBtn && !claimBtn.disabled) {
           claimBtn.addEventListener("click", () => handleClaim(route.id));
@@ -1128,6 +1255,13 @@
             render();
           });
         }
+        document.querySelectorAll("[data-viewkeys]").forEach((btn) => {
+          btn.addEventListener("click", () => handleViewRemainingKeys(btn.getAttribute("data-viewkeys")));
+        });
+        document.getElementById("closeViewKeysBtn")?.addEventListener("click", () => {
+          state.viewingKeys = null;
+          render();
+        });
         document.querySelectorAll("[data-edit]").forEach((btn) => {
           btn.addEventListener("click", () => {
             state.editingId = btn.getAttribute("data-edit");
@@ -1152,16 +1286,36 @@
       }
     }
 
+    async function handleGoogleSignIn() {
+      state.statusMsg = null;
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+        render();
+      }
+    }
+
+    async function handleUserSignOut() {
+      state.statusMsg = null;
+      state.inbox = [];
+      state.lastClaimMs = 0;
+      await signOut(auth);
+      render();
+    }
+
     async function handleClaim(gid) {
       if (state.busyClaim) return;
+      if (!isRealSignedIn()) {
+        await handleGoogleSignIn();
+        return;
+      }
       state.statusMsg = null;
       state.busyClaim = true;
       render();
 
       try {
-        if (!auth.currentUser) {
-          await signInAnonymously(auth);
-        }
         const uid = auth.currentUser.uid;
         const adminMode = isAdminUser();
         const giveawayRef = doc(db, "giveaways", gid);
@@ -1240,9 +1394,31 @@
 
     async function handleAdminLogout() {
       state.statusMsg = null;
+      state.editingId = null;
+      state.viewingKeys = null;
       await signOut(auth);
-      await signInAnonymously(auth);
       render();
+    }
+
+    async function handleViewRemainingKeys(gid) {
+      const target = state.giveaways.find((g) => g.id === gid);
+      if (!target) return;
+      state.statusMsg = null;
+      try {
+        const snap = await getDocs(collection(db, "giveaways", gid, "keys"));
+        const nextIdx = Number(target.next) || 0;
+        const remaining = snap.docs
+          .map((d) => ({ idx: Number(d.id), v: d.data().v }))
+          .filter((item) => Number.isFinite(item.idx) && item.idx >= nextIdx)
+          .sort((a, b) => a.idx - b.idx)
+          .map((item) => item.v);
+        state.viewingKeys = { gid, title: target.title, keys: remaining };
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+        render();
+      }
     }
 
     async function handleCreateGiveaway(e) {
@@ -1445,6 +1621,12 @@
       }
 
       const app = initializeApp(firebaseConfig);
+      if (RECAPTCHA_SITE_KEY) {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+          isTokenAutoRefreshEnabled: true
+        });
+      }
       auth = getAuth(app);
       db = getFirestore(app);
 
@@ -1464,18 +1646,20 @@
       );
 
       onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          try {
-            await signInAnonymously(auth);
-          } catch (err) {
-            state.statusMsg = { type: "error", text: friendlyError(err) };
-            render();
-          }
+        if (user && user.isAnonymous) {
+          await signOut(auth);
           return;
         }
-        state.user = user;
+        state.user = user || null;
         state.authReady = true;
-        attachUserListeners(user.uid);
+        if (user) {
+          attachUserListeners(user.uid);
+        } else {
+          if (unsubInbox) unsubInbox();
+          if (unsubCd) unsubCd();
+          state.inbox = [];
+          state.lastClaimMs = 0;
+        }
         render();
       });
 
