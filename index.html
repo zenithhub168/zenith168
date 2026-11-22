@@ -717,6 +717,12 @@
       if (code === "auth/too-many-requests") {
         return "ลองเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่";
       }
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        return "หน้าต่างเข้าสู่ระบบถูกปิดหรือกดซ้ำ กรุณากดใหม่อีกครั้ง";
+      }
+      if (code === "auth/popup-blocked") {
+        return "เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัปแล้วลองใหม่";
+      }
       if (code === "unavailable" || code === "failed-precondition") {
         return "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
       }
@@ -1292,13 +1298,19 @@
     }
 
     async function handleGoogleSignIn() {
+      if (state.busyAuth) return;
+      state.busyAuth = true;
       state.statusMsg = null;
       try {
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
       } catch (err) {
-        state.statusMsg = { type: "error", text: friendlyError(err) };
-        render();
+        if (err?.code !== "auth/cancelled-popup-request") {
+          state.statusMsg = { type: "error", text: friendlyError(err) };
+          render();
+        }
+      } finally {
+        state.busyAuth = false;
       }
     }
 
