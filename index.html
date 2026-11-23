@@ -626,6 +626,7 @@
       doc,
       getDoc,
       getDocs,
+      setDoc,
       addDoc,
       updateDoc,
       deleteDoc,
@@ -651,6 +652,9 @@
       appId: "1:269019280004:web:fc586c37568af186d788d1",
       measurementId: "G-HJKP87TT80"
     };
+
+    // Discord Client ID สำหรับปุ่ม "เชื่อมต่อ Discord" (ใช้ร่วมกับสุ่มผู้โชคดี)
+    const DISCORD_CLIENT_ID = "1520405120091816077";
 
     // (ตัวเลือกเสริม) ใส่ Site Key ของ reCAPTCHA v3 เพื่อเปิด Firebase App Check กันบอท
     const RECAPTCHA_SITE_KEY = "";
@@ -681,7 +685,11 @@
       editingId: null,
       viewingKeys: null,
       search: "",
-      filter: "all"
+      filter: "all",
+      discordProfile: null,
+      webhookUrl: "",
+      createMode: "keys",
+      raffleInfo: {}
     };
 
     let auth = null;
@@ -689,6 +697,8 @@
     let unsubGiveaways = null;
     let unsubInbox = null;
     let unsubCd = null;
+    let unsubDiscord = null;
+    let unsubEntries = null;
     let countdownTimer = null;
 
     function esc(str) {
@@ -807,9 +817,10 @@
 
       const q = state.search.trim().toLowerCase();
       const filtered = state.giveaways.filter((g) => {
+        const isRaffle = g.mode === "raffle";
         const total = Number(g.total) || 0;
         const left = Math.max(0, total - (Number(g.next) || 0));
-        const isOpen = Boolean(g.open) && left > 0;
+        const isOpen = isRaffle ? Boolean(g.open) : (Boolean(g.open) && left > 0);
         if (state.filter === "open" && !isOpen) return false;
         if (state.filter === "closed" && isOpen) return false;
         if (!q) return true;
@@ -820,13 +831,17 @@
       });
 
       const cards = filtered.map((g) => {
+        const isRaffle = g.mode === "raffle";
         const total = Number(g.total) || 0;
         const next = Number(g.next) || 0;
         const left = Math.max(0, total - next);
-        const isOpen = Boolean(g.open) && left > 0;
+        const isOpen = isRaffle ? Boolean(g.open) : (Boolean(g.open) && left > 0);
         const chipsHtml = (Array.isArray(g.chips) ? g.chips : [])
           .map((c) => `<span class="chip">${esc(c)}</span>`)
           .join("");
+        const rightMeta = isRaffle
+          ? (Array.isArray(g.winners) && g.winners.length > 0 ? `ประกาศผลแล้ว (${g.winners.length})` : `สุ่ม ${g.winnerCount || 1} รางวัล`)
+          : `${left} of ${total} left`;
 
         return `
           <a class="card clickable" href="#g-${encodeURIComponent(g.id)}">
@@ -835,7 +850,7 @@
             ${chipsHtml ? `<div class="chips">${chipsHtml}</div>` : ""}
             <div class="card-meta">
               <span class="pill ${isOpen ? "open" : "closed"}">${isOpen ? "Open" : "Closed"}</span>
-              <span>${left} of ${total} left</span>
+              <span>${rightMeta}</span>
             </div>
           </a>
         `;
@@ -872,25 +887,75 @@
         `;
       }
 
+      const isRaffle = g.mode === "raffle";
       const total = Math.max(0, Number(g.total) || 0);
       const next = Math.max(0, Number(g.next) || 0);
       const left = Math.max(0, total - next);
-      const isEnded = !g.open || left <= 0;
+      const isEnded = isRaffle ? !g.open : (!g.open || left <= 0);
 
       const r = 74;
       const circumference = 2 * Math.PI * r;
-      const ratio = total > 0 ? left / total : 0;
+      const ratio = isRaffle ? (isEnded ? 0 : 1) : (total > 0 ? left / total : 0);
       const dashOffset = circumference * (1 - ratio);
 
       const statusLabel = isEnded ? "Closed" : "Open";
       const allChips = [
         `<span class="pill ${isEnded ? "closed" : "open"}">${statusLabel}</span>`,
+        ...(isRaffle ? [`<span class="chip">Lucky Draw • ${g.winnerCount || 1} Winners</span>`] : []),
         ...(Array.isArray(g.chips) ? g.chips.map((c) => `<span class="chip">${esc(c)}</span>`) : [])
       ].join("");
 
+      const rInfo = state.raffleInfo[g.id] || { count: 0, joined: false };
+      const winnersList = Array.isArray(g.winners) ? g.winners : [];
       const cdMs = getCooldownRemainingMs();
       let actionHtml = "";
-      if (isEnded) {
+
+      if (isRaffle) {
+        if (winnersList.length > 0) {
+          actionHtml = `
+            <div class="claimed-box" style="border-color:rgba(245,158,11,0.45); background:rgba(245,158,11,0.08);">
+              <div style="font-size:0.92rem; color:#fde68a; font-weight:700; margin-bottom:8px;">ผู้โชคดีที่ได้รับรางวัล</div>
+              ${winnersList.map((w, i) => `
+                <div class="key-row" style="margin-top:6px;">
+                  <span class="key-code">#${i + 1} @${esc(w.discordUsername)}</span>
+                  <span class="muted" style="font-size:0.78rem;">ID: ${esc(w.discordId)}</span>
+                </div>
+              `).join("")}
+            </div>
+          `;
+        } else if (isEnded) {
+          actionHtml = `
+            <div class="ended-box">
+              <strong>This giveaway has ended</strong>
+              It is no longer accepting entries.
+            </div>
+          `;
+        } else if (!isRealSignedIn()) {
+          actionHtml = `
+            <button id="googleLoginClaimBtn" class="btn btn-primary">
+              Sign in with Google to Join
+            </button>
+          `;
+        } else if (!state.discordProfile) {
+          actionHtml = `
+            <button id="connectDiscordBtn" class="btn btn-primary" style="background:linear-gradient(135deg,#5865F2 0%,#4752C4 100%);">
+              เชื่อมต่อ Discord เพื่อเข้าร่วมสุ่ม
+            </button>
+          `;
+        } else if (rInfo.joined) {
+          actionHtml = `
+            <button class="btn btn-primary" disabled>
+              เข้าร่วมแล้ว (@${esc(state.discordProfile.username)})
+            </button>
+          `;
+        } else {
+          actionHtml = `
+            <button id="joinRaffleBtn" class="btn btn-primary" ${state.busyClaim ? "disabled" : ""}>
+              ${state.busyClaim ? "กำลังบันทึก..." : `เข้าร่วมสุ่มรางวัล (@${esc(state.discordProfile.username)})`}
+            </button>
+          `;
+        }
+      } else if (isEnded) {
         actionHtml = `
           <div class="ended-box">
             <strong>This giveaway has ended</strong>
@@ -949,8 +1014,8 @@
                 />
               </svg>
               <div class="ring-center">
-                <span class="ring-num">${left}</span>
-                <span class="ring-sub">of ${total} left</span>
+                <span class="ring-num">${isRaffle ? rInfo.count : left}</span>
+                <span class="ring-sub">${isRaffle ? "joined" : `of ${total} left`}</span>
               </div>
             </div>
 
@@ -1042,16 +1107,22 @@
       const listHtml = state.giveaways.length === 0
         ? `<div class="empty-state">ยังไม่มีงานแจก</div>`
         : state.giveaways.map((g) => {
+            const isRaffle = g.mode === "raffle";
             const total = Number(g.total) || 0;
             const left = Math.max(0, total - (Number(g.next) || 0));
+            const subInfo = isRaffle
+              ? `สุ่มผู้โชคดี (${g.winnerCount || 1} รางวัล)`
+              : `เหลือ ${left}/${total}`;
             return `
               <div class="admin-row">
                 <div>
                   <div style="font-weight:600;">${esc(g.title)}</div>
-                  <div class="muted">${esc(g.badge)} • เหลือ ${left}/${total} • ${g.open ? "Open" : "Closed"}</div>
+                  <div class="muted">${esc(g.badge)} • ${subInfo} • ${g.open ? "Open" : "Closed"}</div>
                 </div>
                 <div class="admin-actions">
-                  <button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>
+                  ${isRaffle
+                    ? `<button class="btn btn-sm" style="background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.45); color:#fde68a;" data-draw="${esc(g.id)}">สุ่มประกาศผู้โชคดี</button>`
+                    : `<button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>`}
                   <button class="btn btn-sm" data-edit="${esc(g.id)}">แก้ไข</button>
                   <button class="btn btn-sm" data-toggle="${esc(g.id)}" data-open="${g.open ? "1" : "0"}">
                     ${g.open ? "ปิดงาน" : "เปิดงาน"}
@@ -1071,6 +1142,15 @@
           <div style="display:flex; justify-content:flex-end;">
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
+
+          <form id="webhookForm" class="form-card">
+            <h2 style="margin:0; font-size:1.05rem;">Discord Webhook (สำหรับประกาศผู้โชคดีอัตโนมัติ)</h2>
+            <div class="field">
+              <label for="webhookInput">Webhook URL (ไม่บังคับ)</label>
+              <input id="webhookInput" class="input" placeholder="https://discord.com/api/webhooks/..." value="${esc(state.webhookUrl)}" />
+            </div>
+            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึก Webhook</button>
+          </form>
 
           ${(() => {
             if (!state.viewingKeys) return "";
@@ -1128,6 +1208,13 @@
           <form id="createGiveawayForm" class="form-card">
             <h2 style="margin:0; font-size:1.1rem;">สร้างงานแจกใหม่</h2>
             <div class="field">
+              <label for="gMode">รูปแบบงานแจก</label>
+              <select id="gMode" class="input">
+                <option value="keys" ${state.createMode === "keys" ? "selected" : ""}>แจกคีย์ทันที (Key Drop)</option>
+                <option value="raffle" ${state.createMode === "raffle" ? "selected" : ""}>สุ่มผู้โชคดี (Lucky Draw + แท็ก Discord)</option>
+              </select>
+            </div>
+            <div class="field">
               <label for="gTitle">ชื่องานแจก</label>
               <input id="gTitle" class="input" placeholder="เช่น Zenith Pro 30-Day Drop" required />
             </div>
@@ -1139,10 +1226,19 @@
               <label for="gChips">แท็ก (คั่นด้วยคอมมา)</label>
               <input id="gChips" class="input" placeholder="เช่น 30 Days, Premium" />
             </div>
-            <div class="field">
-              <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
-              <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
-            </div>
+            ${state.createMode === "raffle"
+              ? `
+                <div class="field">
+                  <label for="gWinners">จำนวนผู้โชคดี</label>
+                  <input id="gWinners" type="number" min="1" max="50" value="1" class="input" required />
+                </div>
+              `
+              : `
+                <div class="field">
+                  <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
+                  <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
+                </div>
+              `}
             <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
               ${state.busyAdmin ? "กำลังบันทึก..." : "สร้างงานแจก"}
             </button>
@@ -1163,10 +1259,15 @@
       }
       if (isRealSignedIn()) {
         const label = state.user.email || state.user.displayName || "Account";
+        const discordBtn = state.discordProfile
+          ? `<span class="pill" style="font-size:0.74rem; padding:3px 9px; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">@${esc(state.discordProfile.username)}</span>`
+          : `<button id="navConnectDiscordBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">Connect Discord</button>`;
         el.innerHTML = `
-          <span class="muted" style="font-size:0.78rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(label)}">${esc(label)}</span>
+          ${discordBtn}
+          <span class="muted" style="font-size:0.78rem; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(label)}">${esc(label)}</span>
           <button id="navSignOutBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem;">Sign out</button>
         `;
+        document.getElementById("navConnectDiscordBtn")?.addEventListener("click", handleConnectDiscord);
         document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
       } else {
         el.innerHTML = `<button id="navGoogleBtn" class="btn btn-sm" style="padding:6px 12px; font-size:0.8rem;">Sign in</button>`;
@@ -1237,6 +1338,8 @@
 
       if (route.name === "detail") {
         document.getElementById("googleLoginClaimBtn")?.addEventListener("click", handleGoogleSignIn);
+        document.getElementById("connectDiscordBtn")?.addEventListener("click", handleConnectDiscord);
+        document.getElementById("joinRaffleBtn")?.addEventListener("click", () => handleJoinRaffle(route.id));
         const claimBtn = document.getElementById("claimBtn");
         if (claimBtn && !claimBtn.disabled) {
           claimBtn.addEventListener("click", () => handleClaim(route.id));
@@ -1252,6 +1355,11 @@
         if (logoutBtn) {
           logoutBtn.addEventListener("click", handleAdminLogout);
         }
+        document.getElementById("webhookForm")?.addEventListener("submit", handleSaveWebhook);
+        document.getElementById("gMode")?.addEventListener("change", (e) => {
+          state.createMode = e.target.value;
+          render();
+        });
         const createForm = document.getElementById("createGiveawayForm");
         if (createForm) {
           createForm.addEventListener("submit", handleCreateGiveaway);
@@ -1267,6 +1375,9 @@
             render();
           });
         }
+        document.querySelectorAll("[data-draw]").forEach((btn) => {
+          btn.addEventListener("click", () => handleDrawWinners(btn.getAttribute("data-draw")));
+        });
         document.querySelectorAll("[data-viewkeys]").forEach((btn) => {
           btn.addEventListener("click", () => handleViewRemainingKeys(btn.getAttribute("data-viewkeys")));
         });
@@ -1439,18 +1550,194 @@
       }
     }
 
+    function handleConnectDiscord() {
+      state.statusMsg = null;
+      if (!DISCORD_CLIENT_ID || DISCORD_CLIENT_ID.includes("YOUR_")) {
+        state.statusMsg = { type: "error", text: "ยังไม่ได้ตั้งค่า DISCORD_CLIENT_ID ใน index.html" };
+        render();
+        return;
+      }
+      sessionStorage.setItem("zenith_post_discord_hash", window.location.hash || "#");
+      const redirectUri = window.location.origin + window.location.pathname;
+      const url = `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(DISCORD_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
+      window.location.href = url;
+    }
+
+    function captureDiscordHashOnBoot() {
+      const h = window.location.hash || "";
+      if (!h.includes("access_token=")) return;
+      const params = new URLSearchParams(h.replace(/^#/, ""));
+      const token = params.get("access_token");
+      if (token) {
+        sessionStorage.setItem("zenith_discord_token", token);
+      }
+      const backHash = sessionStorage.getItem("zenith_post_discord_hash") || "#";
+      sessionStorage.removeItem("zenith_post_discord_hash");
+      window.history.replaceState({}, document.title, window.location.origin + window.location.pathname + backHash);
+    }
+
+    async function syncDiscordTokenIfNeeded(uid) {
+      const token = sessionStorage.getItem("zenith_discord_token");
+      if (!token) return;
+      sessionStorage.removeItem("zenith_discord_token");
+      try {
+        const res = await fetch("https://discord.com/api/users/@me", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const dUser = await res.json();
+        if (!res.ok || !dUser.id) throw new Error("ดึงข้อมูล Discord ไม่สำเร็จ");
+        const username = dUser.global_name || dUser.username || `User#${dUser.id}`;
+        await setDoc(doc(db, "users", uid, "profile", "discord"), {
+          id: dUser.id,
+          username,
+          avatar: dUser.avatar || "",
+          updatedAt: serverTimestamp()
+        });
+        state.statusMsg = { type: "success", text: `เชื่อมต่อ Discord (@${username}) เรียบร้อยแล้ว` };
+        render();
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+        render();
+      }
+    }
+
+    async function handleJoinRaffle(gid) {
+      if (state.busyClaim) return;
+      if (!isRealSignedIn()) { await handleGoogleSignIn(); return; }
+      if (!state.discordProfile) { handleConnectDiscord(); return; }
+
+      state.statusMsg = null;
+      state.busyClaim = true;
+      render();
+      try {
+        const uid = auth.currentUser.uid;
+        await setDoc(doc(db, "giveaways", gid, "entries", uid), {
+          discordId: state.discordProfile.id,
+          discordUsername: state.discordProfile.username,
+          at: serverTimestamp()
+        });
+        state.statusMsg = { type: "success", text: `เข้าร่วมสุ่มรางวัลด้วยบัญชี @${state.discordProfile.username} แล้ว!` };
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+      } finally {
+        state.busyClaim = false;
+        render();
+      }
+    }
+
+    async function handleSaveWebhook(e) {
+      e.preventDefault();
+      const url = document.getElementById("webhookInput").value.trim();
+      state.statusMsg = null;
+      try {
+        await setDoc(doc(db, "admin", "config"), { webhookUrl: url });
+        state.webhookUrl = url;
+        state.statusMsg = { type: "success", text: "บันทึก Discord Webhook แล้ว" };
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+      }
+      render();
+    }
+
+    async function handleDrawWinners(gid) {
+      const target = state.giveaways.find((g) => g.id === gid);
+      if (!target) return;
+      state.statusMsg = null;
+      state.busyAdmin = true;
+      render();
+
+      try {
+        const snap = await getDocs(collection(db, "giveaways", gid, "entries"));
+        const entries = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+        if (entries.length === 0) {
+          throw new Error("ยังไม่มีผู้เข้าร่วมในงานนี้");
+        }
+        const count = Math.min(entries.length, Math.max(1, Number(target.winnerCount) || 1));
+        for (let i = entries.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [entries[i], entries[j]] = [entries[j], entries[i]];
+        }
+        const winners = entries.slice(0, count).map((e) => ({
+          discordId: e.discordId,
+          discordUsername: e.discordUsername
+        }));
+
+        await updateDoc(doc(db, "giveaways", gid), {
+          winners,
+          open: false
+        });
+
+        if (state.webhookUrl) {
+          const mentions = winners.map((w, i) => `**#${i + 1}** <@${w.discordId}> (\`${w.discordUsername}\`)`).join("\n");
+          await fetch(state.webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: winners.map((w) => `<@${w.discordId}>`).join(" "),
+              embeds: [{
+                title: `ประกาศผู้โชคดี: ${target.title}`,
+                description: mentions,
+                color: 5793266,
+                footer: { text: `${target.badge || "Zenith Drops"} • ผู้เข้าร่วมทั้งหมด ${entries.length} คน` }
+              }]
+            })
+          });
+        }
+
+        state.statusMsg = {
+          type: "success",
+          text: `สุ่มผู้โชคดี ${winners.length} คนสำเร็จ: ${winners.map((w) => "@" + w.discordUsername).join(", ")}`
+        };
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+      } finally {
+        state.busyAdmin = false;
+        render();
+      }
+    }
+
     async function handleCreateGiveaway(e) {
       e.preventDefault();
+      const mode = document.getElementById("gMode")?.value || "keys";
       const title = document.getElementById("gTitle").value.trim();
       const badge = document.getElementById("gBadge").value.trim();
       const chipsRaw = document.getElementById("gChips").value;
+      const chips = chipsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+
+      if (mode === "raffle") {
+        const winnerCount = Math.max(1, Number(document.getElementById("gWinners")?.value) || 1);
+        if (!title || !badge) {
+          state.statusMsg = { type: "error", text: "กรุณากรอกชื่องานแจกและชื่อสินค้า" };
+          render();
+          return;
+        }
+        state.statusMsg = null;
+        state.busyAdmin = true;
+        render();
+        try {
+          await addDoc(collection(db, "giveaways"), {
+            mode: "raffle",
+            title,
+            badge,
+            chips,
+            winnerCount,
+            winners: [],
+            total: 0,
+            next: 0,
+            open: true,
+            createdAt: serverTimestamp()
+          });
+          state.statusMsg = { type: "success", text: `สร้างงานสุ่มผู้โชคดี "${title}" (${winnerCount} รางวัล) แล้ว` };
+        } catch (err) {
+          state.statusMsg = { type: "error", text: friendlyError(err) };
+        } finally {
+          state.busyAdmin = false;
+          render();
+        }
+        return;
+      }
+
       const keysRaw = document.getElementById("gKeys").value;
-
-      const chips = chipsRaw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
       const keys = keysRaw
         .split(/\r?\n/)
         .map((s) => s.trim())
@@ -1468,6 +1755,7 @@
 
       try {
         const gDocRef = await addDoc(collection(db, "giveaways"), {
+          mode: "keys",
           title,
           badge,
           chips,
@@ -1575,7 +1863,8 @@
       state.statusMsg = null;
       try {
         const keysSnap = await getDocs(collection(db, "giveaways", gid, "keys"));
-        const docs = keysSnap.docs;
+        const entriesSnap = await getDocs(collection(db, "giveaways", gid, "entries"));
+        const docs = [...keysSnap.docs, ...entriesSnap.docs];
         const CHUNK = 450;
         for (let i = 0; i < docs.length; i += CHUNK) {
           const batch = writeBatch(db);
@@ -1594,6 +1883,7 @@
     function attachUserListeners(uid) {
       if (unsubInbox) unsubInbox();
       if (unsubCd) unsubCd();
+      if (unsubDiscord) unsubDiscord();
 
       const inboxQ = query(collection(db, "users", uid, "inbox"), orderBy("at", "desc"));
       unsubInbox = onSnapshot(inboxQ, (snap) => {
@@ -1607,6 +1897,25 @@
         } else {
           state.lastClaimMs = 0;
         }
+        if (getRoute().name === "detail") render();
+      });
+
+      unsubDiscord = onSnapshot(doc(db, "users", uid, "profile", "discord"), (snap) => {
+        state.discordProfile = snap.exists() ? snap.data() : null;
+        render();
+      });
+    }
+
+    function attachDetailEntriesListener(gid) {
+      if (unsubEntries) unsubEntries();
+      unsubEntries = null;
+      if (!gid || !isRealSignedIn()) return;
+      unsubEntries = onSnapshot(collection(db, "giveaways", gid, "entries"), (snap) => {
+        const uid = auth.currentUser?.uid;
+        state.raffleInfo[gid] = {
+          count: snap.size,
+          joined: snap.docs.some((d) => d.id === uid)
+        };
         if (getRoute().name === "detail") render();
       });
     }
@@ -1628,8 +1937,12 @@
     }
 
     function boot() {
+      captureDiscordHashOnBoot();
+
       window.addEventListener("hashchange", () => {
         state.statusMsg = null;
+        const r = getRoute();
+        if (r.name === "detail") attachDetailEntriesListener(r.id);
         render();
       });
 
@@ -1682,11 +1995,22 @@
         state.authReady = true;
         if (user) {
           attachUserListeners(user.uid);
+          syncDiscordTokenIfNeeded(user.uid);
+          const r = getRoute();
+          if (r.name === "detail") attachDetailEntriesListener(r.id);
+          if (state.isPasswordAdmin) {
+            getDoc(doc(db, "admin", "config")).then((s) => {
+              if (s.exists()) state.webhookUrl = s.data().webhookUrl || "";
+            }).catch(() => {});
+          }
         } else {
           if (unsubInbox) unsubInbox();
           if (unsubCd) unsubCd();
+          if (unsubDiscord) unsubDiscord();
+          if (unsubEntries) unsubEntries();
           state.inbox = [];
           state.lastClaimMs = 0;
+          state.discordProfile = null;
         }
         render();
       });
