@@ -615,8 +615,7 @@
     import {
       getAuth,
       onAuthStateChanged,
-      GoogleAuthProvider,
-      signInWithPopup,
+      signInAnonymously,
       signInWithEmailAndPassword,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -765,7 +764,7 @@
     }
 
     function isRealSignedIn() {
-      return Boolean(state.user && !state.user.isAnonymous);
+      return Boolean(state.user && (state.discordProfile || isAdminUser()));
     }
 
     function getRoute() {
@@ -930,16 +929,10 @@
               It is no longer accepting entries.
             </div>
           `;
-        } else if (!isRealSignedIn()) {
-          actionHtml = `
-            <button id="googleLoginClaimBtn" class="btn btn-primary">
-              Sign in with Google to Join
-            </button>
-          `;
-        } else if (!state.discordProfile) {
+        } else if (!isRealSignedIn() || !state.discordProfile) {
           actionHtml = `
             <button id="connectDiscordBtn" class="btn btn-primary" style="background:linear-gradient(135deg,#5865F2 0%,#4752C4 100%);">
-              เชื่อมต่อ Discord เพื่อเข้าร่วมสุ่ม
+              Login Discord เพื่อเข้าร่วมสุ่ม
             </button>
           `;
         } else if (rInfo.joined) {
@@ -964,8 +957,8 @@
         `;
       } else if (!isRealSignedIn()) {
         actionHtml = `
-          <button id="googleLoginClaimBtn" class="btn btn-primary">
-            Sign in with Google to Claim
+          <button id="connectDiscordBtn" class="btn btn-primary" style="background:linear-gradient(135deg,#5865F2 0%,#4752C4 100%);">
+            Login Discord to Claim
           </button>
         `;
       } else if (cdMs > 0) {
@@ -1039,8 +1032,8 @@
           </div>
           <div class="stack">
             <div class="empty-state" style="display:flex; flex-direction:column; align-items:center; gap:14px;">
-              <span>กรุณาเข้าสู่ระบบด้วย Google เพื่อดูคีย์ที่ได้รับ</span>
-              <button id="googleLoginInboxBtn" class="btn btn-primary" style="max-width:260px;">Sign in with Google</button>
+              <span>กรุณาเข้าสู่ระบบด้วย Discord เพื่อดูคีย์ที่ได้รับ</span>
+              <button id="discordLoginInboxBtn" class="btn btn-primary" style="max-width:260px; background:linear-gradient(135deg,#5865F2 0%,#4752C4 100%);">Login Discord</button>
             </div>
           </div>
         `;
@@ -1257,21 +1250,21 @@
         el.innerHTML = "";
         return;
       }
-      if (isRealSignedIn()) {
-        const label = state.user.email || state.user.displayName || "Account";
-        const discordBtn = state.discordProfile
-          ? `<span class="pill" style="font-size:0.74rem; padding:3px 9px; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">@${esc(state.discordProfile.username)}</span>`
-          : `<button id="navConnectDiscordBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">Connect Discord</button>`;
+      if (isAdminUser()) {
         el.innerHTML = `
-          ${discordBtn}
-          <span class="muted" style="font-size:0.78rem; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(label)}">${esc(label)}</span>
+          <span class="pill" style="font-size:0.74rem; padding:3px 9px;">Admin</span>
           <button id="navSignOutBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem;">Sign out</button>
         `;
-        document.getElementById("navConnectDiscordBtn")?.addEventListener("click", handleConnectDiscord);
+        document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
+      } else if (isRealSignedIn() && state.discordProfile) {
+        el.innerHTML = `
+          <span class="pill" style="font-size:0.74rem; padding:3px 9px; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">@${esc(state.discordProfile.username)}</span>
+          <button id="navSignOutBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem;">Sign out</button>
+        `;
         document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
       } else {
-        el.innerHTML = `<button id="navGoogleBtn" class="btn btn-sm" style="padding:6px 12px; font-size:0.8rem;">Sign in</button>`;
-        document.getElementById("navGoogleBtn")?.addEventListener("click", handleGoogleSignIn);
+        el.innerHTML = `<button id="navDiscordBtn" class="btn btn-sm" style="padding:6px 12px; font-size:0.8rem; background:rgba(88,101,242,0.22); border-color:rgba(88,101,242,0.45); color:#c7d2fe;">Login Discord</button>`;
+        document.getElementById("navDiscordBtn")?.addEventListener("click", handleConnectDiscord);
       }
     }
 
@@ -1333,11 +1326,10 @@
       }
 
       if (route.name === "inbox") {
-        document.getElementById("googleLoginInboxBtn")?.addEventListener("click", handleGoogleSignIn);
+        document.getElementById("discordLoginInboxBtn")?.addEventListener("click", handleConnectDiscord);
       }
 
       if (route.name === "detail") {
-        document.getElementById("googleLoginClaimBtn")?.addEventListener("click", handleGoogleSignIn);
         document.getElementById("connectDiscordBtn")?.addEventListener("click", handleConnectDiscord);
         document.getElementById("joinRaffleBtn")?.addEventListener("click", () => handleJoinRaffle(route.id));
         const claimBtn = document.getElementById("claimBtn");
@@ -1409,27 +1401,12 @@
       }
     }
 
-    async function handleGoogleSignIn() {
-      if (state.busyAuth) return;
-      state.busyAuth = true;
-      state.statusMsg = null;
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        if (err?.code !== "auth/cancelled-popup-request") {
-          state.statusMsg = { type: "error", text: friendlyError(err) };
-          render();
-        }
-      } finally {
-        state.busyAuth = false;
-      }
-    }
-
     async function handleUserSignOut() {
       state.statusMsg = null;
       state.inbox = [];
       state.lastClaimMs = 0;
+      state.discordProfile = null;
+      localStorage.removeItem("zenith_discord_profile");
       await signOut(auth);
       render();
     }
@@ -1437,7 +1414,7 @@
     async function handleClaim(gid) {
       if (state.busyClaim) return;
       if (!isRealSignedIn()) {
-        await handleGoogleSignIn();
+        handleConnectDiscord();
         return;
       }
       state.statusMsg = null;
@@ -1576,7 +1553,7 @@
       window.history.replaceState({}, document.title, window.location.origin + window.location.pathname + backHash);
     }
 
-    async function syncDiscordTokenIfNeeded(uid) {
+    async function syncDiscordTokenIfNeeded() {
       const token = sessionStorage.getItem("zenith_discord_token");
       if (!token) return;
       sessionStorage.removeItem("zenith_discord_token");
@@ -1587,13 +1564,21 @@
         const dUser = await res.json();
         if (!res.ok || !dUser.id) throw new Error("ดึงข้อมูล Discord ไม่สำเร็จ");
         const username = dUser.global_name || dUser.username || `User#${dUser.id}`;
-        await setDoc(doc(db, "users", uid, "profile", "discord"), {
-          id: dUser.id,
-          username,
-          avatar: dUser.avatar || "",
-          updatedAt: serverTimestamp()
-        });
-        state.statusMsg = { type: "success", text: `เชื่อมต่อ Discord (@${username}) เรียบร้อยแล้ว` };
+        const profile = { id: dUser.id, username, avatar: dUser.avatar || "" };
+        localStorage.setItem("zenith_discord_profile", JSON.stringify(profile));
+        state.discordProfile = profile;
+
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          await setDoc(doc(db, "users", uid, "profile", "discord"), {
+            ...profile,
+            updatedAt: serverTimestamp()
+          });
+        }
+        state.statusMsg = { type: "success", text: `เข้าสู่ระบบ Discord (@${username}) เรียบร้อยแล้ว` };
         render();
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
@@ -1603,8 +1588,7 @@
 
     async function handleJoinRaffle(gid) {
       if (state.busyClaim) return;
-      if (!isRealSignedIn()) { await handleGoogleSignIn(); return; }
-      if (!state.discordProfile) { handleConnectDiscord(); return; }
+      if (!isRealSignedIn() || !state.discordProfile) { handleConnectDiscord(); return; }
 
       state.statusMsg = null;
       state.busyClaim = true;
@@ -1977,11 +1961,19 @@
       );
 
       onAuthStateChanged(auth, async (user) => {
-        if (user && user.isAnonymous) {
-          await signOut(auth);
+        if (!user && localStorage.getItem("zenith_discord_profile")) {
+          try {
+            await signInAnonymously(auth);
+          } catch {}
           return;
         }
         state.user = user || null;
+        if (!state.discordProfile) {
+          try {
+            const cached = localStorage.getItem("zenith_discord_profile");
+            if (cached) state.discordProfile = JSON.parse(cached);
+          } catch {}
+        }
         if (user && user.email === ADMIN_EMAIL) {
           try {
             const tokenRes = await user.getIdTokenResult();
@@ -1995,7 +1987,6 @@
         state.authReady = true;
         if (user) {
           attachUserListeners(user.uid);
-          syncDiscordTokenIfNeeded(user.uid);
           const r = getRoute();
           if (r.name === "detail") attachDetailEntriesListener(r.id);
           if (state.isPasswordAdmin) {
@@ -2010,11 +2001,11 @@
           if (unsubEntries) unsubEntries();
           state.inbox = [];
           state.lastClaimMs = 0;
-          state.discordProfile = null;
         }
         render();
       });
 
+      syncDiscordTokenIfNeeded();
       startCountdownTick();
       render();
     }
