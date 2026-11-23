@@ -687,6 +687,7 @@
       filter: "all",
       discordProfile: null,
       webhookUrl: "",
+      siteSettings: { announcement: "", discordInviteUrl: "" },
       createMode: "keys",
       raffleInfo: {}
     };
@@ -795,9 +796,20 @@
     }
 
     function renderStatusBanner() {
-      if (!state.statusMsg) return "";
+      const s = state.siteSettings || {};
+      const ann = s.announcement ? String(s.announcement).trim() : "";
+      const inv = s.discordInviteUrl ? String(s.discordInviteUrl).trim() : "";
+      const siteBar = (ann || inv)
+        ? `
+          <div class="banner" style="margin:12px auto 18px; border-color:rgba(88,101,242,0.4); background:rgba(88,101,242,0.12); color:#e0e7ff; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <span>${esc(ann || "เข้าร่วมเซิร์ฟเวอร์ Discord เพื่อติดตามรอบแจกใหม่ๆ")}</span>
+            ${inv ? `<a href="${esc(inv)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#5865F2; border-color:#5865F2; color:#fff;">Join Discord</a>` : ""}
+          </div>
+        `
+        : "";
+      if (!state.statusMsg) return siteBar;
       const cls = state.statusMsg.type === "error" ? "banner error" : "banner success";
-      return `<div class="${cls}" style="margin-bottom:18px;">${esc(state.statusMsg.text)}</div>`;
+      return siteBar + `<div class="${cls}" style="margin-bottom:18px;">${esc(state.statusMsg.text)}</div>`;
     }
 
     function renderHome() {
@@ -1136,6 +1148,19 @@
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
 
+          <form id="siteSettingsForm" class="form-card">
+            <h2 style="margin:0; font-size:1.05rem;">ป้ายประกาศหน้าเว็บ & ลิงก์ Join Discord</h2>
+            <div class="field">
+              <label for="annInput">ข้อความประกาศ (เว้นว่างเพื่อซ่อน)</label>
+              <input id="annInput" class="input" placeholder="เช่น แจกคีย์รอบใหม่ทุกวันศุกร์ 20:00 น." value="${esc(state.siteSettings.announcement || "")}" />
+            </div>
+            <div class="field">
+              <label for="inviteInput">ลิงก์เชิญเข้า Discord Server (ไม่บังคับ)</label>
+              <input id="inviteInput" class="input" placeholder="https://discord.gg/..." value="${esc(state.siteSettings.discordInviteUrl || "")}" />
+            </div>
+            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึกประกาศ</button>
+          </form>
+
           <form id="webhookForm" class="form-card">
             <h2 style="margin:0; font-size:1.05rem;">Discord Webhook (สำหรับประกาศผู้โชคดีอัตโนมัติ)</h2>
             <div class="field">
@@ -1347,6 +1372,7 @@
         if (logoutBtn) {
           logoutBtn.addEventListener("click", handleAdminLogout);
         }
+        document.getElementById("siteSettingsForm")?.addEventListener("submit", handleSaveSiteSettings);
         document.getElementById("webhookForm")?.addEventListener("submit", handleSaveWebhook);
         document.getElementById("gMode")?.addEventListener("change", (e) => {
           state.createMode = e.target.value;
@@ -1595,18 +1621,39 @@
       render();
       try {
         const uid = auth.currentUser.uid;
-        await setDoc(doc(db, "giveaways", gid, "entries", uid), {
-          discordId: state.discordProfile.id,
+        const discordId = state.discordProfile.id;
+        await setDoc(doc(db, "giveaways", gid, "entries", discordId), {
+          uid,
+          discordId,
           discordUsername: state.discordProfile.username,
           at: serverTimestamp()
         });
         state.statusMsg = { type: "success", text: `เข้าร่วมสุ่มรางวัลด้วยบัญชี @${state.discordProfile.username} แล้ว!` };
       } catch (err) {
-        state.statusMsg = { type: "error", text: friendlyError(err) };
+        if (err?.code === "permission-denied") {
+          state.statusMsg = { type: "error", text: "บัญชี Discord นี้เข้าร่วมงานสุ่มนี้ไปแล้ว (1 บัญชี Discord = 1 สิทธิ์)" };
+        } else {
+          state.statusMsg = { type: "error", text: friendlyError(err) };
+        }
       } finally {
         state.busyClaim = false;
         render();
       }
+    }
+
+    async function handleSaveSiteSettings(e) {
+      e.preventDefault();
+      const announcement = document.getElementById("annInput").value.trim();
+      const discordInviteUrl = document.getElementById("inviteInput").value.trim();
+      state.statusMsg = null;
+      try {
+        await setDoc(doc(db, "site", "settings"), { announcement, discordInviteUrl });
+        state.siteSettings = { announcement, discordInviteUrl };
+        state.statusMsg = { type: "success", text: "บันทึกป้ายประกาศและลิงก์ Discord แล้ว" };
+      } catch (err) {
+        state.statusMsg = { type: "error", text: friendlyError(err) };
+      }
+      render();
     }
 
     async function handleSaveWebhook(e) {
@@ -1896,9 +1943,10 @@
       if (!gid || !isRealSignedIn()) return;
       unsubEntries = onSnapshot(collection(db, "giveaways", gid, "entries"), (snap) => {
         const uid = auth.currentUser?.uid;
+        const dId = state.discordProfile?.id;
         state.raffleInfo[gid] = {
           count: snap.size,
-          joined: snap.docs.some((d) => d.id === uid)
+          joined: snap.docs.some((d) => (dId && d.id === dId) || d.data().uid === uid)
         };
         if (getRoute().name === "detail") render();
       });
@@ -1959,6 +2007,13 @@
           render();
         }
       );
+
+      onSnapshot(doc(db, "site", "settings"), (snap) => {
+        state.siteSettings = snap.exists()
+          ? { announcement: snap.data().announcement || "", discordInviteUrl: snap.data().discordInviteUrl || "" }
+          : { announcement: "", discordInviteUrl: "" };
+        render();
+      });
 
       onAuthStateChanged(auth, async (user) => {
         if (!user && localStorage.getItem("zenith_discord_profile")) {
