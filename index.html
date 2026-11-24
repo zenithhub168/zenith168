@@ -30,6 +30,132 @@
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
     }
 
+    body[data-theme="obsidian"] {
+      --bg-top: #040407;
+      --bg-mid: #090714;
+      --bg-bot: #030306;
+      --surface: rgba(15, 13, 28, 0.78);
+      --surface-solid: #0f0d1c;
+      --surface-hover: rgba(26, 21, 52, 0.9);
+      --border: rgba(139, 92, 246, 0.22);
+      --border-strong: rgba(139, 92, 246, 0.5);
+      --text: #f3f1ff;
+      --text-muted: #a19bc2;
+      --accent: #7c3aed;
+      --accent-glow: rgba(124, 58, 237, 0.42);
+      --accent-2: #a78bfa;
+    }
+
+    body[data-theme="obsidian"]::before {
+      background:
+        radial-gradient(640px circle at 16% 10%, rgba(124, 58, 237, 0.22), transparent 60%),
+        radial-gradient(540px circle at 85% 20%, rgba(59, 130, 246, 0.16), transparent 62%),
+        radial-gradient(620px circle at 50% 96%, rgba(139, 92, 246, 0.15), transparent 65%);
+    }
+
+    body[data-theme="obsidian"] .navbar {
+      background: rgba(12, 10, 24, 0.88);
+    }
+
+    body[data-theme="obsidian"] .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+      box-shadow: 0 10px 26px rgba(124, 58, 237, 0.36);
+    }
+
+    body[data-theme="obsidian"] .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 14px 32px rgba(124, 58, 237, 0.5);
+    }
+
+    body[data-theme="obsidian"] .card.clickable:hover {
+      border-color: rgba(167, 139, 250, 0.55);
+      box-shadow: 0 18px 42px rgba(124, 58, 237, 0.24), 0 0 0 1px rgba(167, 139, 250, 0.24);
+    }
+
+    /* Rexzy-style Glass Pop-up Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(3, 3, 8, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      animation: fadeIn 0.18s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.93) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      border-radius: 22px;
+      padding: 26px 24px 22px;
+      background: rgba(14, 12, 26, 0.94);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65), 0 0 40px var(--accent-glow);
+      position: relative;
+      animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+      text-align: center;
+    }
+
+    .modal-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 18%;
+      right: 18%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-2), #60a5fa, transparent);
+      border-radius: 999px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .modal-title {
+      margin: 6px 0 8px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      color: var(--text-muted);
+      font-size: 0.93rem;
+      line-height: 1.6;
+      margin-bottom: 18px;
+      white-space: pre-line;
+    }
+
     * { box-sizing: border-box; }
 
     html, body {
@@ -707,7 +833,7 @@
     }
   </style>
 </head>
-<body>
+<body data-theme="obsidian">
   <header class="navbar-wrap">
     <nav class="navbar" aria-label="Primary">
       <a href="#" class="brand">
@@ -726,6 +852,7 @@
   <main class="container" id="app">
     <div class="empty-state">กำลังโหลด...</div>
   </main>
+  <div id="modalRoot"></div>
   <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
   <script type="module">
@@ -809,7 +936,8 @@
       filter: "all",
       discordProfile: null,
       webhookUrl: "",
-      siteSettings: { announcement: "", discordInviteUrl: "" },
+      siteSettings: { announcement: "", discordInviteUrl: "", theme: "obsidian", popupTitle: "", popupBody: "" },
+      modal: null,
       createMode: "keys",
       raffleInfo: {}
     };
@@ -1285,16 +1413,31 @@
           </div>
 
           <form id="siteSettingsForm" class="form-card">
-            <h2 style="margin:0; font-size:1.05rem;">ป้ายประกาศหน้าเว็บ & ลิงก์ Join Discord</h2>
+            <h2 style="margin:0; font-size:1.05rem;">ธีมหน้าเว็บ, ป้ายประกาศ & Pop-up แนว Rexzy</h2>
             <div class="field">
-              <label for="annInput">ข้อความประกาศ (เว้นว่างเพื่อซ่อน)</label>
+              <label for="themeSelect">ธีมสีหน้าเว็บ</label>
+              <select id="themeSelect" class="input">
+                <option value="obsidian" ${(state.siteSettings.theme || "obsidian") === "obsidian" ? "selected" : ""}>Obsidian + ม่วง-น้ำเงินนีออน</option>
+                <option value="midnight" ${state.siteSettings.theme === "midnight" ? "selected" : ""}>Midnight Blue (น้ำเงินเข้ม)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="annInput">ข้อความประกาศแถบบน (เว้นว่างเพื่อซ่อน)</label>
               <input id="annInput" class="input" placeholder="เช่น แจกคีย์รอบใหม่ทุกวันศุกร์ 20:00 น." value="${esc(state.siteSettings.announcement || "")}" />
             </div>
             <div class="field">
               <label for="inviteInput">ลิงก์เชิญเข้า Discord Server (ไม่บังคับ)</label>
               <input id="inviteInput" class="input" placeholder="https://discord.gg/..." value="${esc(state.siteSettings.discordInviteUrl || "")}" />
             </div>
-            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึกประกาศ</button>
+            <div class="field">
+              <label for="popupTitleInput">หัวข้อ Pop-up ต้อนรับ (เว้นว่างเพื่อปิด Pop-up)</label>
+              <input id="popupTitleInput" class="input" placeholder="เช่น ยินดีต้อนรับสู่ Zenith Drops" value="${esc(state.siteSettings.popupTitle || "")}" />
+            </div>
+            <div class="field">
+              <label for="popupBodyInput">รายละเอียดใน Pop-up</label>
+              <textarea id="popupBodyInput" class="textarea" style="min-height:74px; font-family:inherit;" placeholder="เช่น กด Login Discord แล้วเลือกรับคีย์ฟรีได้ทุก 24 ชม.">${esc(state.siteSettings.popupBody || "")}</textarea>
+            </div>
+            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึกการตั้งค่าเว็บ</button>
           </form>
 
           <form id="webhookForm" class="form-card">
@@ -1433,7 +1576,73 @@
       }
     }
 
+    function applyTheme() {
+      const t = state.siteSettings?.theme === "midnight" ? "midnight" : "obsidian";
+      document.body.setAttribute("data-theme", t);
+    }
+
+    function renderModal() {
+      const root = document.getElementById("modalRoot");
+      if (!root) return;
+      if (!state.modal) {
+        root.innerHTML = "";
+        return;
+      }
+      const m = state.modal;
+      const keyBlock = m.key
+        ? `
+          <div class="key-row" style="margin:12px 0 16px;">
+            <span class="key-code">${esc(m.key)}</span>
+            <button type="button" class="btn btn-sm" data-copy="${esc(m.key)}">Copy</button>
+          </div>
+        `
+        : "";
+      const discordBtn = m.inviteUrl
+        ? `<a href="${esc(m.inviteUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#5865F2; border-color:#5865F2; color:#fff; padding:11px 18px;">Join Discord</a>`
+        : "";
+
+      root.innerHTML = `
+        <div class="modal-backdrop" id="modalBackdrop">
+          <div class="modal-card" role="dialog" aria-modal="true">
+            <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close">×</button>
+            ${m.badge ? `<span class="pill" style="margin:0 auto 10px;">${esc(m.badge)}</span>` : ""}
+            <h2 class="modal-title">${esc(m.title)}</h2>
+            ${m.body ? `<div class="modal-body">${esc(m.body)}</div>` : ""}
+            ${keyBlock}
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              ${discordBtn}
+              <button type="button" class="btn btn-primary" id="modalOkBtn" style="max-width:180px; padding:11px 20px;">${esc(m.okText || "รับทราบ")}</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const close = () => {
+        state.modal = null;
+        renderModal();
+      };
+      document.getElementById("modalCloseBtn")?.addEventListener("click", close);
+      document.getElementById("modalOkBtn")?.addEventListener("click", close);
+      document.getElementById("modalBackdrop")?.addEventListener("click", (e) => {
+        if (e.target.id === "modalBackdrop") close();
+      });
+      root.querySelectorAll("[data-copy]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const val = btn.getAttribute("data-copy");
+          try {
+            await navigator.clipboard.writeText(val);
+            btn.textContent = "Copied!";
+            showToast("คัดลอกคีย์แล้ว!");
+            setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+          } catch {
+            showToast("คัดลอกไม่สำเร็จ", "error");
+          }
+        });
+      });
+    }
+
     function render() {
+      applyTheme();
       const route = getRoute();
       updateNavActive(route.name);
       renderNavAuth();
@@ -1451,6 +1660,7 @@
 
       appEl.innerHTML = renderStatusBanner() + body;
       bindViewEvents(route);
+      renderModal();
     }
 
     function showToast(text, type = "success") {
@@ -1701,6 +1911,13 @@
         if (!adminMode) {
           state.lastClaimMs = Date.now();
         }
+        state.modal = {
+          badge: "KEY CLAIMED",
+          title: "รับคีย์สำเร็จ!",
+          body: "คีย์ของคุณถูกบันทึกไว้ในหน้า Inbox เรียบร้อยแล้ว",
+          key: result.key,
+          okText: "ปิดหน้าต่าง"
+        };
         launchConfetti();
         showToast("รับคีย์สำเร็จ!");
       } catch (err) {
@@ -1848,13 +2065,18 @@
 
     async function handleSaveSiteSettings(e) {
       e.preventDefault();
+      const theme = document.getElementById("themeSelect")?.value || "obsidian";
       const announcement = document.getElementById("annInput").value.trim();
       const discordInviteUrl = document.getElementById("inviteInput").value.trim();
+      const popupTitle = document.getElementById("popupTitleInput").value.trim();
+      const popupBody = document.getElementById("popupBodyInput").value.trim();
       state.statusMsg = null;
       try {
-        await setDoc(doc(db, "site", "settings"), { announcement, discordInviteUrl });
-        state.siteSettings = { announcement, discordInviteUrl };
-        state.statusMsg = { type: "success", text: "บันทึกป้ายประกาศและลิงก์ Discord แล้ว" };
+        const nextSettings = { theme, announcement, discordInviteUrl, popupTitle, popupBody };
+        await setDoc(doc(db, "site", "settings"), nextSettings);
+        state.siteSettings = nextSettings;
+        applyTheme();
+        state.statusMsg = { type: "success", text: "บันทึกธีมและประกาศเว็บเรียบร้อยแล้ว" };
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
       }
@@ -2228,9 +2450,24 @@
       );
 
       onSnapshot(doc(db, "site", "settings"), (snap) => {
-        state.siteSettings = snap.exists()
-          ? { announcement: snap.data().announcement || "", discordInviteUrl: snap.data().discordInviteUrl || "" }
-          : { announcement: "", discordInviteUrl: "" };
+        const d = snap.exists() ? snap.data() : {};
+        state.siteSettings = {
+          theme: d.theme || "obsidian",
+          announcement: d.announcement || "",
+          discordInviteUrl: d.discordInviteUrl || "",
+          popupTitle: d.popupTitle || "",
+          popupBody: d.popupBody || ""
+        };
+        if (state.siteSettings.popupTitle && !sessionStorage.getItem("zenith_popup_seen")) {
+          sessionStorage.setItem("zenith_popup_seen", "1");
+          state.modal = {
+            badge: "ANNOUNCEMENT",
+            title: state.siteSettings.popupTitle,
+            body: state.siteSettings.popupBody || "",
+            inviteUrl: state.siteSettings.discordInviteUrl || "",
+            okText: "เข้าสู่เว็บไซต์"
+          };
+        }
         render();
       });
 
