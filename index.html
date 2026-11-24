@@ -38,9 +38,9 @@
       position: fixed;
       inset: 0;
       z-index: 80;
-      background: rgba(3, 3, 8, 0.72);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(23, 17, 43, 0.48);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -72,15 +72,17 @@
 
     .modal-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 520px;
+      max-height: 88vh;
+      overflow-y: auto;
       border-radius: 22px;
-      padding: 26px 24px 22px;
-      background: rgba(14, 12, 26, 0.94);
+      padding: 24px 24px 22px;
+      background: #ffffff;
       border: 1px solid var(--border-strong);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65), 0 0 40px var(--accent-glow);
+      box-shadow: 0 28px 70px rgba(109, 40, 217, 0.25);
       position: relative;
-      animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
-      text-align: center;
+      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+      text-align: left;
     }
 
     .modal-card::before {
@@ -102,7 +104,7 @@
       height: 32px;
       border-radius: 50%;
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.05);
+      background: #f5f3ff;
       color: var(--text-muted);
       font-size: 1.1rem;
       cursor: pointer;
@@ -113,7 +115,7 @@
 
     .modal-close:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--accent);
     }
 
     .modal-title {
@@ -1079,6 +1081,7 @@
       isPasswordAdmin: false,
       editingId: null,
       viewingKeys: null,
+      adminModal: null,
       search: "",
       filter: "all",
       discordProfile: null,
@@ -1612,140 +1615,160 @@
             `;
         }).join("");
 
+      let modalHtml = "";
+      if (state.adminModal === "webhook") {
+        modalHtml = `
+          <div class="modal-backdrop" id="adminModalBackdrop">
+            <div class="modal-card">
+              <button type="button" class="modal-close" id="closeAdminModalBtn">×</button>
+              <form id="webhookForm" style="display:flex; flex-direction:column; gap:14px;">
+                <h2 style="margin:0; font-size:1.12rem;">Discord Webhook (ประกาศผู้โชคดีอัตโนมัติ)</h2>
+                <div class="field">
+                  <label for="webhookInput">Webhook URL (ไม่บังคับ)</label>
+                  <input id="webhookInput" class="input" placeholder="https://discord.com/api/webhooks/..." value="${esc(state.webhookUrl)}" />
+                </div>
+                <button type="submit" class="btn btn-primary" style="max-width:none;">บันทึก Webhook</button>
+              </form>
+            </div>
+          </div>
+        `;
+      } else if (state.adminModal === "keys" && state.viewingKeys) {
+        const vk = state.viewingKeys;
+        const joined = vk.keys.join("\n");
+        modalHtml = `
+          <div class="modal-backdrop" id="adminModalBackdrop">
+            <div class="modal-card">
+              <button type="button" class="modal-close" id="closeAdminModalBtn">×</button>
+              <h2 style="margin:0 36px 12px 0; font-size:1.08rem;">คีย์ที่ยังไม่ถูกแจก: ${esc(vk.title)} (${vk.keys.length} ชิ้น)</h2>
+              ${vk.keys.length === 0
+                ? `<div class="muted">ไม่มีคีย์คงเหลือแล้ว</div>`
+                : `<textarea class="textarea" style="min-height:180px;" readonly>${esc(joined)}</textarea>
+                   <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+                     <button type="button" class="btn btn-sm" data-copy="${esc(joined)}">Copy All</button>
+                   </div>`}
+            </div>
+          </div>
+        `;
+      } else if (state.adminModal === "edit" && state.editingId) {
+        const editing = state.giveaways.find((x) => x.id === state.editingId);
+        if (editing) {
+          const chipsText = Array.isArray(editing.chips) ? editing.chips.join(", ") : "";
+          modalHtml = `
+            <div class="modal-backdrop" id="adminModalBackdrop">
+              <div class="modal-card">
+                <button type="button" class="modal-close" id="closeAdminModalBtn">×</button>
+                <form id="editGiveawayForm" style="display:flex; flex-direction:column; gap:14px;">
+                  <h2 style="margin:0; font-size:1.12rem;">แก้ไขงานแจก</h2>
+                  <div class="field">
+                    <label for="eTitle">ชื่องานแจก</label>
+                    <input id="eTitle" class="input" value="${esc(editing.title)}" required />
+                  </div>
+                  <div class="field">
+                    <label for="eBadge">ชื่อสินค้า / ป้าย (Pill)</label>
+                    <input id="eBadge" class="input" value="${esc(editing.badge)}" required />
+                  </div>
+                  <div class="field">
+                    <label for="eChips">แท็ก (คั่นด้วยคอมมา)</label>
+                    <input id="eChips" class="input" value="${esc(chipsText)}" />
+                  </div>
+                  <div class="field">
+                    <label for="eImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
+                    <input id="eImage" class="input" placeholder="https://..." value="${esc(editing.imageUrl || "")}" />
+                  </div>
+                  <div class="field">
+                    <label for="eStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
+                    <input id="eStartAt" type="datetime-local" class="input" value="${editing.startAtMs ? new Date(Number(editing.startAtMs) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}" />
+                  </div>
+                  <div class="field">
+                    <label for="eAddKeys">เพิ่มคีย์ใหม่ต่อท้าย (1 บรรทัด = 1 ชิ้น, เว้นว่างได้)</label>
+                    <textarea id="eAddKeys" class="textarea" placeholder="ใส่เฉพาะคีย์ที่ต้องการเพิ่ม..."></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
+                    ${state.busyAdmin ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          `;
+        }
+      } else if (state.adminModal === "create") {
+        modalHtml = `
+          <div class="modal-backdrop" id="adminModalBackdrop">
+            <div class="modal-card">
+              <button type="button" class="modal-close" id="closeAdminModalBtn">×</button>
+              <form id="createGiveawayForm" style="display:flex; flex-direction:column; gap:14px;">
+                <h2 style="margin:0; font-size:1.12rem;">สร้างงานแจกใหม่</h2>
+                <div class="field">
+                  <label for="gMode">รูปแบบงานแจก</label>
+                  <select id="gMode" class="input">
+                    <option value="keys" ${state.createMode === "keys" ? "selected" : ""}>แจกคีย์ทันที (Key Drop)</option>
+                    <option value="raffle" ${state.createMode === "raffle" ? "selected" : ""}>สุ่มผู้โชคดี (Lucky Draw + แท็ก Discord)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="gTitle">ชื่องานแจก</label>
+                  <input id="gTitle" class="input" placeholder="เช่น Zenith Pro 30-Day Drop" required />
+                </div>
+                <div class="field">
+                  <label for="gBadge">ชื่อสินค้า / ป้าย (Pill)</label>
+                  <input id="gBadge" class="input" placeholder="เช่น ZENITH PRO" required />
+                </div>
+                <div class="field">
+                  <label for="gChips">แท็ก (คั่นด้วยคอมมา)</label>
+                  <input id="gChips" class="input" placeholder="เช่น 30 Days, Premium" />
+                </div>
+                <div class="field">
+                  <label for="gImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
+                  <input id="gImage" class="input" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="gStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
+                  <input id="gStartAt" type="datetime-local" class="input" />
+                </div>
+                ${state.createMode === "raffle"
+                  ? `
+                    <div class="field">
+                      <label for="gWinners">จำนวนผู้โชคดี</label>
+                      <input id="gWinners" type="number" min="1" max="50" value="1" class="input" required />
+                    </div>
+                  `
+                  : `
+                    <div class="field">
+                      <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
+                      <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
+                    </div>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--text-muted); cursor:pointer;">
+                      <input type="checkbox" id="gShuffle" />
+                      <span>สุ่มลำดับคีย์ก่อนบันทึก (Shuffle Keys)</span>
+                    </label>
+                  `}
+                <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
+                  ${state.busyAdmin ? "กำลังบันทึก..." : "สร้างงานแจก"}
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
       return `
         <div class="page-header">
           <h1>Admin Panel</h1>
           <p>จัดการงานแจกคีย์ (${esc(ADMIN_EMAIL)})</p>
         </div>
         <div class="stack">
-          <div style="display:flex; justify-content:flex-end;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="openCreateModalBtn" class="btn btn-primary" style="width:auto; padding:10px 18px;">+ สร้างงานแจกใหม่</button>
+              <button id="openWebhookModalBtn" class="btn btn-sm" style="padding:10px 14px;">ตั้งค่า Webhook</button>
+            </div>
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
 
-          <form id="webhookForm" class="form-card">
-            <h2 style="margin:0; font-size:1.05rem;">Discord Webhook (สำหรับประกาศผู้โชคดีอัตโนมัติ)</h2>
-            <div class="field">
-              <label for="webhookInput">Webhook URL (ไม่บังคับ)</label>
-              <input id="webhookInput" class="input" placeholder="https://discord.com/api/webhooks/..." value="${esc(state.webhookUrl)}" />
-            </div>
-            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึก Webhook</button>
-          </form>
-
-          ${(() => {
-          if (!state.viewingKeys) return "";
-          const vk = state.viewingKeys;
-          const joined = vk.keys.join("\n");
-          return `
-              <div class="form-card" style="border-color: var(--border-strong);">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-                  <h2 style="margin:0; font-size:1.05rem;">คีย์ที่ยังไม่ถูกแจก: ${esc(vk.title)} (${vk.keys.length} ชิ้น)</h2>
-                  <div style="display:flex; gap:8px;">
-                    ${vk.keys.length > 0 ? `<button type="button" class="btn btn-sm" data-copy="${esc(joined)}">Copy All</button>` : ""}
-                    <button type="button" id="closeViewKeysBtn" class="btn btn-sm">ปิด</button>
-                  </div>
-                </div>
-                ${vk.keys.length === 0
-              ? `<div class="muted">ไม่มีคีย์คงเหลือแล้ว</div>`
-              : `<textarea class="textarea" readonly>${esc(joined)}</textarea>`}
-              </div>
-            `;
-        })()}
-
-          ${(() => {
-          const editing = state.editingId ? state.giveaways.find((x) => x.id === state.editingId) : null;
-          if (!editing) return "";
-          const chipsText = Array.isArray(editing.chips) ? editing.chips.join(", ") : "";
-          return `
-              <form id="editGiveawayForm" class="form-card" style="border-color: var(--border-strong);">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                  <h2 style="margin:0; font-size:1.1rem;">แก้ไขงานแจก</h2>
-                  <button type="button" id="cancelEditBtn" class="btn btn-sm">ยกเลิก</button>
-                </div>
-                <div class="field">
-                  <label for="eTitle">ชื่องานแจก</label>
-                  <input id="eTitle" class="input" value="${esc(editing.title)}" required />
-                </div>
-                <div class="field">
-                  <label for="eBadge">ชื่อสินค้า / ป้าย (Pill)</label>
-                  <input id="eBadge" class="input" value="${esc(editing.badge)}" required />
-                </div>
-                <div class="field">
-                  <label for="eChips">แท็ก (คั่นด้วยคอมมา)</label>
-                  <input id="eChips" class="input" value="${esc(chipsText)}" />
-                </div>
-                <div class="field">
-                  <label for="eImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
-                  <input id="eImage" class="input" placeholder="https://..." value="${esc(editing.imageUrl || "")}" />
-                </div>
-                <div class="field">
-                  <label for="eStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
-                  <input id="eStartAt" type="datetime-local" class="input" value="${editing.startAtMs ? new Date(Number(editing.startAtMs) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}" />
-                </div>
-                <div class="field">
-                  <label for="eAddKeys">เพิ่มคีย์ใหม่ต่อท้าย (1 บรรทัด = 1 ชิ้น, เว้นว่างได้)</label>
-                  <textarea id="eAddKeys" class="textarea" placeholder="ใส่เฉพาะคีย์ที่ต้องการเพิ่ม..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
-                  ${state.busyAdmin ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
-                </button>
-              </form>
-            `;
-        })()}
-
-          <form id="createGiveawayForm" class="form-card">
-            <h2 style="margin:0; font-size:1.1rem;">สร้างงานแจกใหม่</h2>
-            <div class="field">
-              <label for="gMode">รูปแบบงานแจก</label>
-              <select id="gMode" class="input">
-                <option value="keys" ${state.createMode === "keys" ? "selected" : ""}>แจกคีย์ทันที (Key Drop)</option>
-                <option value="raffle" ${state.createMode === "raffle" ? "selected" : ""}>สุ่มผู้โชคดี (Lucky Draw + แท็ก Discord)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="gTitle">ชื่องานแจก</label>
-              <input id="gTitle" class="input" placeholder="เช่น Zenith Pro 30-Day Drop" required />
-            </div>
-            <div class="field">
-              <label for="gBadge">ชื่อสินค้า / ป้าย (Pill)</label>
-              <input id="gBadge" class="input" placeholder="เช่น ZENITH PRO" required />
-            </div>
-            <div class="field">
-              <label for="gChips">แท็ก (คั่นด้วยคอมมา)</label>
-              <input id="gChips" class="input" placeholder="เช่น 30 Days, Premium" />
-            </div>
-            <div class="field">
-              <label for="gImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
-              <input id="gImage" class="input" placeholder="https://..." />
-            </div>
-            <div class="field">
-              <label for="gStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
-              <input id="gStartAt" type="datetime-local" class="input" />
-            </div>
-            ${state.createMode === "raffle"
-          ? `
-                <div class="field">
-                  <label for="gWinners">จำนวนผู้โชคดี</label>
-                  <input id="gWinners" type="number" min="1" max="50" value="1" class="input" required />
-                </div>
-              `
-          : `
-                <div class="field">
-                  <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
-                  <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
-                </div>
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--text-muted); cursor:pointer;">
-                  <input type="checkbox" id="gShuffle" />
-                  <span>สุ่มลำดับคีย์ก่อนบันทึก (Shuffle Keys)</span>
-                </label>
-              `}
-            <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
-              ${state.busyAdmin ? "กำลังบันทึก..." : "สร้างงานแจก"}
-            </button>
-          </form>
-
-          <h2 style="margin:12px 0 0; font-size:1.08rem;">รายการงานทั้งหมด</h2>
+          <h2 style="margin:6px 0 0; font-size:1.08rem;">รายการงานทั้งหมด (${state.giveaways.length})</h2>
           ${listHtml}
         </div>
+        ${modalHtml}
       `;
     }
 
@@ -1913,6 +1936,26 @@
         if (logoutBtn) {
           logoutBtn.addEventListener("click", handleAdminLogout);
         }
+        const closeAdminModal = () => {
+          state.adminModal = null;
+          state.editingId = null;
+          state.viewingKeys = null;
+          render();
+        };
+        document.getElementById("openCreateModalBtn")?.addEventListener("click", () => {
+          state.adminModal = "create";
+          state.statusMsg = null;
+          render();
+        });
+        document.getElementById("openWebhookModalBtn")?.addEventListener("click", () => {
+          state.adminModal = "webhook";
+          state.statusMsg = null;
+          render();
+        });
+        document.getElementById("closeAdminModalBtn")?.addEventListener("click", closeAdminModal);
+        document.getElementById("adminModalBackdrop")?.addEventListener("click", (e) => {
+          if (e.target.id === "adminModalBackdrop") closeAdminModal();
+        });
         document.getElementById("webhookForm")?.addEventListener("submit", handleSaveWebhook);
         document.getElementById("gMode")?.addEventListener("change", (e) => {
           state.createMode = e.target.value;
@@ -1949,9 +1992,9 @@
         document.querySelectorAll("[data-edit]").forEach((btn) => {
           btn.addEventListener("click", () => {
             state.editingId = btn.getAttribute("data-edit");
+            state.adminModal = "edit";
             state.statusMsg = null;
             render();
-            window.scrollTo({ top: 0, behavior: "smooth" });
           });
         });
         document.querySelectorAll("[data-toggle]").forEach((btn) => {
@@ -2093,8 +2136,8 @@
           .sort((a, b) => a.idx - b.idx)
           .map((item) => item.v);
         state.viewingKeys = { gid, title: target.title, keys: remaining };
+        state.adminModal = "keys";
         render();
-        window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
         render();
@@ -2196,7 +2239,8 @@
       try {
         await setDoc(doc(db, "admin", "config"), { webhookUrl: url });
         state.webhookUrl = url;
-        state.statusMsg = { type: "success", text: "บันทึก Discord Webhook แล้ว" };
+        state.adminModal = null;
+        showToast("บันทึก Discord Webhook แล้ว");
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
       }
@@ -2302,6 +2346,7 @@
             open: true,
             createdAt: serverTimestamp()
           });
+          state.adminModal = null;
           state.statusMsg = { type: "success", text: `สร้างงานสุ่มผู้โชคดี "${title}" (${winnerCount} รางวัล) แล้ว` };
         } catch (err) {
           state.statusMsg = { type: "error", text: friendlyError(err) };
@@ -2362,6 +2407,7 @@
           await batch.commit();
         }
 
+        state.adminModal = null;
         state.statusMsg = { type: "success", text: `สร้างงาน "${title}" พร้อมคีย์ ${keys.length} ชิ้นแล้ว` };
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
@@ -2434,6 +2480,7 @@
         });
 
         state.editingId = null;
+        state.adminModal = null;
         state.statusMsg = {
           type: "success",
           text: addKeys.length > 0
