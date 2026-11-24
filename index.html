@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="obsidian">
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,69 +9,28 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-top: #060b18;
-      --bg-mid: #0a1428;
-      --bg-bot: #050914;
-      --surface: rgba(15, 26, 51, 0.72);
-      --surface-solid: #0f1a33;
-      --surface-hover: rgba(22, 38, 72, 0.85);
-      --border: rgba(96, 145, 255, 0.16);
-      --border-strong: rgba(96, 145, 255, 0.34);
-      --text: #eef3ff;
-      --text-muted: #93a7cc;
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.35);
-      --accent-2: #60a5fa;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --warn: #f59e0b;
+      --bg-top: #fbfaff;
+      --bg-mid: #f3eeff;
+      --bg-bot: #eae3ff;
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-solid: #ffffff;
+      --surface-hover: #ffffff;
+      --border: rgba(124, 58, 237, 0.16);
+      --border-strong: rgba(124, 58, 237, 0.42);
+      --text: #17112b;
+      --text-muted: #5e5480;
+      --accent: #7c3aed;
+      --accent-glow: rgba(124, 58, 237, 0.26);
+      --accent-2: #6d28d9;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warn: #d97706;
       --radius: 18px;
       --font-sans: 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
     }
 
-    html[data-theme="obsidian"] {
-      --bg-top: #040407;
-      --bg-mid: #090714;
-      --bg-bot: #030306;
-      --surface: rgba(15, 13, 28, 0.78);
-      --surface-solid: #0f0d1c;
-      --surface-hover: rgba(26, 21, 52, 0.9);
-      --border: rgba(139, 92, 246, 0.22);
-      --border-strong: rgba(139, 92, 246, 0.5);
-      --text: #f3f1ff;
-      --text-muted: #a19bc2;
-      --accent: #7c3aed;
-      --accent-glow: rgba(124, 58, 237, 0.42);
-      --accent-2: #a78bfa;
-    }
-
-    html[data-theme="obsidian"] body::before {
-      background:
-        radial-gradient(640px circle at 16% 10%, rgba(124, 58, 237, 0.22), transparent 60%),
-        radial-gradient(540px circle at 85% 20%, rgba(59, 130, 246, 0.16), transparent 62%),
-        radial-gradient(620px circle at 50% 96%, rgba(139, 92, 246, 0.15), transparent 65%);
-    }
-
-    html[data-theme="obsidian"] .navbar {
-      background: rgba(12, 10, 24, 0.88);
-    }
-
-    html[data-theme="obsidian"] .btn-primary {
-      background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
-      box-shadow: 0 10px 26px rgba(124, 58, 237, 0.36);
-    }
-
-    html[data-theme="obsidian"] .btn-primary:hover:not(:disabled) {
-      box-shadow: 0 14px 32px rgba(124, 58, 237, 0.5);
-    }
-
-    html[data-theme="obsidian"] .card.clickable:hover {
-      border-color: rgba(167, 139, 250, 0.55);
-      box-shadow: 0 18px 42px rgba(124, 58, 237, 0.24), 0 0 0 1px rgba(167, 139, 250, 0.24);
-    }
-
-    /* Rexzy-style Glass Pop-up Modal */
+    /* Glass Pop-up Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -187,13 +146,13 @@
     .navbar-wrap {
       display: flex;
       justify-content: center;
-      padding: 20px 16px 8px;
+      padding: 18px 16px 8px;
       position: sticky;
       top: 0;
       z-index: 30;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      background: linear-gradient(180deg, rgba(6, 11, 24, 0.88) 0%, rgba(6, 11, 24, 0.4) 100%);
+      background: linear-gradient(180deg, rgba(251, 250, 255, 0.9) 0%, rgba(251, 250, 255, 0.35) 100%);
     }
 
     .navbar {
@@ -202,9 +161,9 @@
       gap: 20px;
       padding: 8px 14px 8px 18px;
       border-radius: 999px;
-      background: rgba(13, 23, 46, 0.85);
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid var(--border);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(109, 40, 217, 0.1);
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -216,7 +175,7 @@
       font-weight: 700;
       font-size: 0.98rem;
       letter-spacing: 0.02em;
-      color: #fff;
+      color: var(--text);
       padding-right: 8px;
       border-right: 1px solid var(--border);
     }
@@ -225,8 +184,8 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: var(--accent-2);
-      box-shadow: 0 0 12px var(--accent-2);
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
     }
 
     .nav-links {
@@ -239,49 +198,49 @@
       padding: 7px 14px;
       border-radius: 999px;
       font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-muted);
       transition: all 0.18s ease;
     }
 
     .nav-link:hover {
-      color: #fff;
-      background: rgba(59, 130, 246, 0.12);
+      color: var(--accent-2);
+      background: rgba(124, 58, 237, 0.08);
     }
 
     .nav-link.active {
       color: #fff;
-      background: rgba(59, 130, 246, 0.24);
-      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.35);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28);
     }
 
     /* Setup & Error Banners */
     .banner {
       margin: 18px auto 0;
-      padding: 16px 20px;
+      padding: 14px 18px;
       border-radius: var(--radius);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      background: rgba(245, 158, 11, 0.1);
-      color: #fde68a;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      background: #fffbeb;
+      color: #92400e;
       font-size: 0.94rem;
       line-height: 1.6;
     }
 
     .banner.error {
-      border-color: rgba(239, 68, 68, 0.4);
-      background: rgba(239, 68, 68, 0.12);
-      color: #fecaca;
+      border-color: rgba(220, 38, 38, 0.35);
+      background: #fef2f2;
+      color: #991b1b;
     }
 
     .banner.success {
-      border-color: rgba(34, 197, 94, 0.4);
-      background: rgba(34, 197, 94, 0.12);
-      color: #bbf7d0;
+      border-color: rgba(22, 163, 74, 0.35);
+      background: #f0fdf4;
+      color: #166534;
     }
 
     .banner code {
       font-family: var(--font-mono);
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(124, 58, 237, 0.1);
       padding: 2px 6px;
       border-radius: 6px;
       font-size: 0.86em;
@@ -343,22 +302,22 @@
       font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.02em;
-      background: rgba(59, 130, 246, 0.16);
-      color: #93c5fd;
-      border: 1px solid rgba(96, 165, 250, 0.28);
+      background: #ede9fe;
+      color: #5b21b6;
+      border: 1px solid rgba(124, 58, 237, 0.22);
       width: fit-content;
     }
 
     .pill.open {
-      background: rgba(34, 197, 94, 0.14);
-      color: #86efac;
-      border-color: rgba(34, 197, 94, 0.3);
+      background: #dcfce7;
+      color: #15803d;
+      border-color: rgba(22, 163, 74, 0.28);
     }
 
     .pill.closed {
-      background: rgba(239, 68, 68, 0.14);
-      color: #fca5a5;
-      border-color: rgba(239, 68, 68, 0.3);
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: rgba(220, 38, 38, 0.25);
     }
 
     .chips {
@@ -372,8 +331,8 @@
       border-radius: 999px;
       font-size: 0.78rem;
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #f5f3ff;
+      border: 1px solid rgba(124, 58, 237, 0.14);
     }
 
     .card-title {
@@ -386,12 +345,114 @@
     .card-meta {
       margin-top: auto;
       padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(124, 58, 237, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.85rem;
       color: var(--text-muted);
+    }
+
+    .card-cover {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease;
+    }
+
+    .card.clickable:hover .card-cover {
+      transform: scale(1.02);
+    }
+
+    /* Rexzy-style Marquee, Hero, Stats */
+    .marquee-bar {
+      overflow: hidden;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%);
+      color: #fff;
+      padding: 9px 0;
+      margin-bottom: 18px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.24);
+    }
+
+    .marquee-track {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: marqueeScroll 22s linear infinite;
+    }
+
+    @keyframes marqueeScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      padding: 32px 26px;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 55%, #ede9fe 100%);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 18px 46px rgba(109, 40, 217, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-card h1 {
+      margin: 8px 0 8px;
+      font-size: clamp(1.55rem, 3.2vw, 2.2rem);
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.96rem;
+      max-width: 520px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 24px rgba(109, 40, 217, 0.06);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stat-val {
+      margin-top: 4px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent-2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: 1fr; }
     }
 
     /* Detail View */
@@ -410,7 +471,7 @@
       transition: color 0.15s;
     }
 
-    .back-link:hover { color: #fff; }
+    .back-link:hover { color: var(--accent-2); }
 
     .detail-card {
       background: var(--surface);
@@ -422,7 +483,7 @@
       flex-direction: column;
       align-items: center;
       gap: 18px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 24px 60px rgba(109, 40, 217, 0.14);
       backdrop-filter: blur(12px);
     }
 
@@ -514,20 +575,20 @@
     .btn-primary {
       width: 100%;
       max-width: 300px;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       color: #fff;
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 10px 24px rgba(124, 58, 237, 0.3);
     }
 
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.45);
+      box-shadow: 0 14px 28px rgba(124, 58, 237, 0.42);
     }
 
     .btn-primary:disabled {
-      opacity: 0.65;
+      opacity: 0.7;
       cursor: not-allowed;
-      background: rgba(30, 48, 86, 0.85);
+      background: #ede9fe;
       box-shadow: none;
       border: 1px solid var(--border);
       color: var(--text-muted);
@@ -538,28 +599,28 @@
       padding: 7px 14px;
       font-size: 0.84rem;
       border-radius: 9px;
-      background: rgba(59, 130, 246, 0.16);
-      color: #bfdbfe;
-      border: 1px solid rgba(96, 165, 250, 0.28);
+      background: #f5f3ff;
+      color: #5b21b6;
+      border: 1px solid rgba(124, 58, 237, 0.24);
     }
 
-    .btn-sm:hover { background: rgba(59, 130, 246, 0.28); color: #fff; }
+    .btn-sm:hover { background: #7c3aed; color: #fff; }
 
     .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: #fca5a5;
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid rgba(220, 38, 38, 0.25);
     }
 
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.28); color: #fff; }
+    .btn-danger:hover { background: #dc2626; color: #fff; }
 
     /* Ended Dashed Box */
     .ended-box {
       width: 100%;
       padding: 18px 16px;
       border-radius: 14px;
-      border: 1.5px dashed rgba(147, 167, 204, 0.35);
-      background: rgba(6, 11, 24, 0.45);
+      border: 1.5px dashed rgba(124, 58, 237, 0.3);
+      background: #faf8ff;
       color: var(--text-muted);
       line-height: 1.55;
     }
@@ -576,8 +637,8 @@
       width: 100%;
       padding: 16px;
       border-radius: 14px;
-      border: 1px solid rgba(34, 197, 94, 0.35);
-      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(22, 163, 74, 0.35);
+      background: #f0fdf4;
       text-align: left;
     }
 
@@ -589,14 +650,14 @@
       margin-top: 8px;
       padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(5, 9, 20, 0.75);
+      background: #f5f3ff;
       border: 1px solid var(--border);
     }
 
     .key-code {
       font-family: var(--font-mono);
       font-size: 0.9rem;
-      color: #e0f2fe;
+      color: #4c1d95;
       word-break: break-all;
     }
 
@@ -663,12 +724,17 @@
       padding: 11px 13px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      background: rgba(5, 10, 22, 0.75);
+      background: #ffffff;
       color: var(--text);
       font-family: inherit;
       font-size: 0.94rem;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input:focus, .textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
     }
 
     .textarea {
@@ -719,9 +785,9 @@
       z-index: -2;
       pointer-events: none;
       background:
-        radial-gradient(620px circle at 18% 8%, rgba(59, 130, 246, 0.16), transparent 60%),
-        radial-gradient(520px circle at 84% 22%, rgba(99, 102, 241, 0.12), transparent 62%),
-        radial-gradient(600px circle at 50% 95%, rgba(37, 99, 235, 0.12), transparent 65%);
+        radial-gradient(620px circle at 15% 10%, rgba(167, 139, 250, 0.25), transparent 60%),
+        radial-gradient(520px circle at 85% 20%, rgba(196, 181, 253, 0.28), transparent 62%),
+        radial-gradient(600px circle at 50% 95%, rgba(139, 92, 246, 0.16), transparent 65%);
     }
 
     body::after {
@@ -731,8 +797,8 @@
       z-index: -1;
       pointer-events: none;
       background-image:
-        linear-gradient(rgba(96, 165, 250, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(96, 165, 250, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(124, 58, 237, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124, 58, 237, 0.045) 1px, transparent 1px);
       background-size: 42px 42px;
       mask-image: radial-gradient(ellipse at 50% 30%, #000 35%, transparent 85%);
       -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 35%, transparent 85%);
@@ -766,8 +832,8 @@
 
     .card.clickable:hover {
       transform: translateY(-4px);
-      border-color: rgba(96, 165, 250, 0.5);
-      box-shadow: 0 18px 42px rgba(37, 99, 235, 0.2), 0 0 0 1px rgba(96, 165, 250, 0.22);
+      border-color: var(--border-strong);
+      box-shadow: 0 18px 42px rgba(124, 58, 237, 0.16), 0 0 0 1px rgba(124, 58, 237, 0.15);
     }
 
     .card.clickable:hover::before {
@@ -800,7 +866,7 @@
       height: 175px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      background: linear-gradient(90deg, rgba(15, 26, 51, 0.6) 25%, rgba(30, 50, 92, 0.7) 50%, rgba(15, 26, 51, 0.6) 75%);
+      background: linear-gradient(90deg, #f3eeff 25%, #e9d5ff 50%, #f3eeff 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite linear;
     }
@@ -819,18 +885,17 @@
     .toast {
       padding: 11px 16px;
       border-radius: 12px;
-      background: rgba(13, 24, 48, 0.94);
+      background: #ffffff;
       border: 1px solid var(--border-strong);
-      color: #eef3ff;
+      color: var(--text);
       font-size: 0.88rem;
-      font-weight: 500;
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(12px);
+      font-weight: 600;
+      box-shadow: 0 14px 32px rgba(109, 40, 217, 0.18);
       animation: fadeUp 0.2s ease both;
     }
 
-    .toast.success { border-color: rgba(34, 197, 94, 0.5); color: #bbf7d0; }
-    .toast.error { border-color: rgba(239, 68, 68, 0.5); color: #fecaca; }
+    .toast.success { border-color: rgba(22, 163, 74, 0.45); color: #166534; }
+    .toast.error { border-color: rgba(220, 38, 38, 0.45); color: #991b1b; }
 
     @media (max-width: 520px) {
       .navbar { gap: 8px; padding: 8px 10px; border-radius: 18px; }
@@ -942,7 +1007,6 @@
       filter: "all",
       discordProfile: null,
       webhookUrl: "",
-      siteSettings: { announcement: "", discordInviteUrl: "", theme: "obsidian", popupTitle: "", popupBody: "" },
       modal: null,
       createMode: "keys",
       raffleInfo: {}
@@ -1052,20 +1116,9 @@
     }
 
     function renderStatusBanner() {
-      const s = state.siteSettings || {};
-      const ann = s.announcement ? String(s.announcement).trim() : "";
-      const inv = s.discordInviteUrl ? String(s.discordInviteUrl).trim() : "";
-      const siteBar = (ann || inv)
-        ? `
-          <div class="banner" style="margin:12px auto 18px; border-color:rgba(88,101,242,0.4); background:rgba(88,101,242,0.12); color:#e0e7ff; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-            <span>${esc(ann || "เข้าร่วมเซิร์ฟเวอร์ Discord เพื่อติดตามรอบแจกใหม่ๆ")}</span>
-            ${inv ? `<a href="${esc(inv)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#5865F2; border-color:#5865F2; color:#fff;">Join Discord</a>` : ""}
-          </div>
-        `
-        : "";
-      if (!state.statusMsg) return siteBar;
+      if (!state.statusMsg) return "";
       const cls = state.statusMsg.type === "error" ? "banner error" : "banner success";
-      return siteBar + `<div class="${cls}" style="margin-bottom:18px;">${esc(state.statusMsg.text)}</div>`;
+      return `<div class="${cls}" style="margin-bottom:18px;">${esc(state.statusMsg.text)}</div>`;
     }
 
     function renderHome() {
@@ -1107,6 +1160,16 @@
         return hay.includes(q);
       });
 
+      const totalOpen = state.giveaways.filter((g) => {
+        const left = Math.max(0, (Number(g.total) || 0) - (Number(g.next) || 0));
+        return g.mode === "raffle" ? Boolean(g.open) : (Boolean(g.open) && left > 0);
+      }).length;
+      const totalLeftKeys = state.giveaways.reduce((sum, g) => {
+        if (g.mode === "raffle") return sum;
+        return sum + Math.max(0, (Number(g.total) || 0) - (Number(g.next) || 0));
+      }, 0);
+      const totalClaimedKeys = state.giveaways.reduce((sum, g) => sum + (Number(g.next) || 0), 0);
+
       const cards = filtered.map((g) => {
         const isRaffle = g.mode === "raffle";
         const total = Number(g.total) || 0;
@@ -1119,9 +1182,13 @@
         const rightMeta = isRaffle
           ? (Array.isArray(g.winners) && g.winners.length > 0 ? `ประกาศผลแล้ว (${g.winners.length})` : `สุ่ม ${g.winnerCount || 1} รางวัล`)
           : `${left} of ${total} left`;
+        const coverHtml = g.imageUrl
+          ? `<img class="card-cover" src="${esc(g.imageUrl)}" alt="${esc(g.title)}" loading="lazy" />`
+          : "";
 
         return `
           <a class="card clickable" href="#g-${encodeURIComponent(g.id)}">
+            ${coverHtml}
             <span class="pill">${esc(g.badge || "Giveaway")}</span>
             <h2 class="card-title">${esc(g.title)}</h2>
             ${chipsHtml ? `<div class="chips">${chipsHtml}</div>` : ""}
@@ -1134,16 +1201,44 @@
       }).join("");
 
       return `
-        <div class="page-header">
-          <h1>Prizes & Giveaways</h1>
-          <p>เลือกงานแจกที่เปิดอยู่เพื่อรับคีย์ (รับได้ 1 คีย์ทุก 24 ชั่วโมง)</p>
+        <div class="marquee-bar">
+          <div class="marquee-track">
+            ZENITH DROPS • กดรับคีย์ฟรีทุก 24 ชั่วโมง • ล็อกอิน Discord เพื่อเข้าร่วมสุ่มผู้โชคดี • ขณะนี้มี ${totalOpen} งานแจกที่กำลังเปิดอยู่!
+          </div>
         </div>
+
+        <section class="hero-card">
+          <div>
+            <span class="pill">KEY GIVEAWAY & LUCKY DRAW</span>
+            <h1>ZENITH DROPS</h1>
+            <p>ศูนย์รวมแจกคีย์ฟรีและกิจกรรมสุ่มผู้โชคดี เชื่อมต่อ Discord แล้วกดรับของรางวัลเข้ากล่อง Inbox ได้ทันที</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="#inbox" class="btn btn-primary" style="width:auto; padding:12px 22px;">เปิดกล่องคีย์ (Inbox)</a>
+          </div>
+        </section>
+
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-label">งานที่เปิดอยู่ตอนนี้</div>
+            <div class="stat-val">${totalOpen}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">คีย์คงเหลือทั้งหมด</div>
+            <div class="stat-val">${totalLeftKeys}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">แจกออกไปแล้ว</div>
+            <div class="stat-val">${totalClaimedKeys}</div>
+          </div>
+        </div>
+
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center;">
           <input id="searchInput" class="input" style="flex:1; min-width:200px;" placeholder="ค้นหางานแจก หรือแท็ก..." value="${esc(state.search)}" />
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-sm" data-filter="all" style="${state.filter === "all" ? "background:rgba(59,130,246,0.35);color:#fff;" : ""}">ทั้งหมด</button>
-            <button class="btn btn-sm" data-filter="open" style="${state.filter === "open" ? "background:rgba(34,197,94,0.28);color:#fff;" : ""}">Open</button>
-            <button class="btn btn-sm" data-filter="closed" style="${state.filter === "closed" ? "background:rgba(239,68,68,0.28);color:#fff;" : ""}">Closed</button>
+            <button class="btn btn-sm" data-filter="all" style="${state.filter === "all" ? "background:#7c3aed;color:#fff;" : ""}">ทั้งหมด</button>
+            <button class="btn btn-sm" data-filter="open" style="${state.filter === "open" ? "background:#16a34a;color:#fff;" : ""}">Open</button>
+            <button class="btn btn-sm" data-filter="closed" style="${state.filter === "closed" ? "background:#dc2626;color:#fff;" : ""}">Closed</button>
           </div>
         </div>
         ${filtered.length === 0 ? `<div class="empty-state">ไม่พบงานแจกที่ตรงกับคำค้นหา</div>` : `<div class="grid">${cards}</div>`}
@@ -1418,34 +1513,6 @@
             <button id="adminLogoutBtn" class="btn btn-sm">ออกจากระบบแอดมิน</button>
           </div>
 
-          <form id="siteSettingsForm" class="form-card">
-            <h2 style="margin:0; font-size:1.05rem;">ธีมหน้าเว็บ, ป้ายประกาศ & Pop-up แนว Rexzy</h2>
-            <div class="field">
-              <label for="themeSelect">ธีมสีหน้าเว็บ</label>
-              <select id="themeSelect" class="input">
-                <option value="obsidian" ${(state.siteSettings.theme || "obsidian") === "obsidian" ? "selected" : ""}>Obsidian + ม่วง-น้ำเงินนีออน</option>
-                <option value="midnight" ${state.siteSettings.theme === "midnight" ? "selected" : ""}>Midnight Blue (น้ำเงินเข้ม)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="annInput">ข้อความประกาศแถบบน (เว้นว่างเพื่อซ่อน)</label>
-              <input id="annInput" class="input" placeholder="เช่น แจกคีย์รอบใหม่ทุกวันศุกร์ 20:00 น." value="${esc(state.siteSettings.announcement || "")}" />
-            </div>
-            <div class="field">
-              <label for="inviteInput">ลิงก์เชิญเข้า Discord Server (ไม่บังคับ)</label>
-              <input id="inviteInput" class="input" placeholder="https://discord.gg/..." value="${esc(state.siteSettings.discordInviteUrl || "")}" />
-            </div>
-            <div class="field">
-              <label for="popupTitleInput">หัวข้อ Pop-up ต้อนรับ (เว้นว่างเพื่อปิด Pop-up)</label>
-              <input id="popupTitleInput" class="input" placeholder="เช่น ยินดีต้อนรับสู่ Zenith Drops" value="${esc(state.siteSettings.popupTitle || "")}" />
-            </div>
-            <div class="field">
-              <label for="popupBodyInput">รายละเอียดใน Pop-up</label>
-              <textarea id="popupBodyInput" class="textarea" style="min-height:74px; font-family:inherit;" placeholder="เช่น กด Login Discord แล้วเลือกรับคีย์ฟรีได้ทุก 24 ชม.">${esc(state.siteSettings.popupBody || "")}</textarea>
-            </div>
-            <button type="submit" class="btn btn-sm" style="width:fit-content;">บันทึกการตั้งค่าเว็บ</button>
-          </form>
-
           <form id="webhookForm" class="form-card">
             <h2 style="margin:0; font-size:1.05rem;">Discord Webhook (สำหรับประกาศผู้โชคดีอัตโนมัติ)</h2>
             <div class="field">
@@ -1498,6 +1565,10 @@
                   <input id="eChips" class="input" value="${esc(chipsText)}" />
                 </div>
                 <div class="field">
+                  <label for="eImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
+                  <input id="eImage" class="input" placeholder="https://..." value="${esc(editing.imageUrl || "")}" />
+                </div>
+                <div class="field">
                   <label for="eAddKeys">เพิ่มคีย์ใหม่ต่อท้าย (1 บรรทัด = 1 ชิ้น, เว้นว่างได้)</label>
                   <textarea id="eAddKeys" class="textarea" placeholder="ใส่เฉพาะคีย์ที่ต้องการเพิ่ม..."></textarea>
                 </div>
@@ -1528,6 +1599,10 @@
             <div class="field">
               <label for="gChips">แท็ก (คั่นด้วยคอมมา)</label>
               <input id="gChips" class="input" placeholder="เช่น 30 Days, Premium" />
+            </div>
+            <div class="field">
+              <label for="gImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
+              <input id="gImage" class="input" placeholder="https://..." />
             </div>
             ${state.createMode === "raffle"
               ? `
@@ -1582,73 +1657,7 @@
       }
     }
 
-    function applyTheme() {
-      const t = state.siteSettings?.theme === "midnight" ? "midnight" : "obsidian";
-      document.documentElement.setAttribute("data-theme", t);
-    }
-
-    function renderModal() {
-      const root = document.getElementById("modalRoot");
-      if (!root) return;
-      if (!state.modal) {
-        root.innerHTML = "";
-        return;
-      }
-      const m = state.modal;
-      const keyBlock = m.key
-        ? `
-          <div class="key-row" style="margin:12px 0 16px;">
-            <span class="key-code">${esc(m.key)}</span>
-            <button type="button" class="btn btn-sm" data-copy="${esc(m.key)}">Copy</button>
-          </div>
-        `
-        : "";
-      const discordBtn = m.inviteUrl
-        ? `<a href="${esc(m.inviteUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#5865F2; border-color:#5865F2; color:#fff; padding:11px 18px;">Join Discord</a>`
-        : "";
-
-      root.innerHTML = `
-        <div class="modal-backdrop" id="modalBackdrop">
-          <div class="modal-card" role="dialog" aria-modal="true">
-            <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close">×</button>
-            ${m.badge ? `<span class="pill" style="margin:0 auto 10px;">${esc(m.badge)}</span>` : ""}
-            <h2 class="modal-title">${esc(m.title)}</h2>
-            ${m.body ? `<div class="modal-body">${esc(m.body)}</div>` : ""}
-            ${keyBlock}
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-              ${discordBtn}
-              <button type="button" class="btn btn-primary" id="modalOkBtn" style="max-width:180px; padding:11px 20px;">${esc(m.okText || "รับทราบ")}</button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const close = () => {
-        state.modal = null;
-        renderModal();
-      };
-      document.getElementById("modalCloseBtn")?.addEventListener("click", close);
-      document.getElementById("modalOkBtn")?.addEventListener("click", close);
-      document.getElementById("modalBackdrop")?.addEventListener("click", (e) => {
-        if (e.target.id === "modalBackdrop") close();
-      });
-      root.querySelectorAll("[data-copy]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const val = btn.getAttribute("data-copy");
-          try {
-            await navigator.clipboard.writeText(val);
-            btn.textContent = "Copied!";
-            showToast("คัดลอกคีย์แล้ว!");
-            setTimeout(() => { btn.textContent = "Copy"; }, 1200);
-          } catch {
-            showToast("คัดลอกไม่สำเร็จ", "error");
-          }
-        });
-      });
-    }
-
     function render() {
-      applyTheme();
       const route = getRoute();
       updateNavActive(route.name);
       renderNavAuth();
@@ -1788,7 +1797,6 @@
         if (logoutBtn) {
           logoutBtn.addEventListener("click", handleAdminLogout);
         }
-        document.getElementById("siteSettingsForm")?.addEventListener("submit", handleSaveSiteSettings);
         document.getElementById("webhookForm")?.addEventListener("submit", handleSaveWebhook);
         document.getElementById("gMode")?.addEventListener("change", (e) => {
           state.createMode = e.target.value;
@@ -1917,13 +1925,6 @@
         if (!adminMode) {
           state.lastClaimMs = Date.now();
         }
-        state.modal = {
-          badge: "KEY CLAIMED",
-          title: "รับคีย์สำเร็จ!",
-          body: "คีย์ของคุณถูกบันทึกไว้ในหน้า Inbox เรียบร้อยแล้ว",
-          key: result.key,
-          okText: "ปิดหน้าต่าง"
-        };
         launchConfetti();
         showToast("รับคีย์สำเร็จ!");
       } catch (err) {
@@ -2069,26 +2070,6 @@
       }
     }
 
-    async function handleSaveSiteSettings(e) {
-      e.preventDefault();
-      const theme = document.getElementById("themeSelect")?.value || "obsidian";
-      const announcement = document.getElementById("annInput").value.trim();
-      const discordInviteUrl = document.getElementById("inviteInput").value.trim();
-      const popupTitle = document.getElementById("popupTitleInput").value.trim();
-      const popupBody = document.getElementById("popupBodyInput").value.trim();
-      state.statusMsg = null;
-      try {
-        const nextSettings = { theme, announcement, discordInviteUrl, popupTitle, popupBody };
-        await setDoc(doc(db, "site", "settings"), nextSettings);
-        state.siteSettings = nextSettings;
-        applyTheme();
-        state.statusMsg = { type: "success", text: "บันทึกธีมและประกาศเว็บเรียบร้อยแล้ว" };
-      } catch (err) {
-        state.statusMsg = { type: "error", text: friendlyError(err) };
-      }
-      render();
-    }
-
     async function handleSaveWebhook(e) {
       e.preventDefault();
       const url = document.getElementById("webhookInput").value.trim();
@@ -2172,6 +2153,7 @@
       const title = document.getElementById("gTitle").value.trim();
       const badge = document.getElementById("gBadge").value.trim();
       const chipsRaw = document.getElementById("gChips").value;
+      const imageUrl = document.getElementById("gImage")?.value.trim() || "";
       const chips = chipsRaw.split(",").map((s) => s.trim()).filter(Boolean);
 
       if (mode === "raffle") {
@@ -2190,6 +2172,7 @@
             title,
             badge,
             chips,
+            imageUrl,
             winnerCount,
             winners: [],
             total: 0,
@@ -2237,6 +2220,7 @@
           title,
           badge,
           chips,
+          imageUrl,
           total: keys.length,
           next: 0,
           open: true,
@@ -2282,6 +2266,7 @@
 
       const title = document.getElementById("eTitle").value.trim();
       const badge = document.getElementById("eBadge").value.trim();
+      const imageUrl = document.getElementById("eImage")?.value.trim() || "";
       const chips = document.getElementById("eChips").value
         .split(",")
         .map((s) => s.trim())
@@ -2318,6 +2303,7 @@
           title,
           badge,
           chips,
+          imageUrl,
           total: oldTotal + addKeys.length
         });
 
@@ -2454,28 +2440,6 @@
           render();
         }
       );
-
-      onSnapshot(doc(db, "site", "settings"), (snap) => {
-        const d = snap.exists() ? snap.data() : {};
-        state.siteSettings = {
-          theme: d.theme || "obsidian",
-          announcement: d.announcement || "",
-          discordInviteUrl: d.discordInviteUrl || "",
-          popupTitle: d.popupTitle || "",
-          popupBody: d.popupBody || ""
-        };
-        if (state.siteSettings.popupTitle && !sessionStorage.getItem("zenith_popup_seen")) {
-          sessionStorage.setItem("zenith_popup_seen", "1");
-          state.modal = {
-            badge: "ANNOUNCEMENT",
-            title: state.siteSettings.popupTitle,
-            body: state.siteSettings.popupBody || "",
-            inviteUrl: state.siteSettings.discordInviteUrl || "",
-            okText: "เข้าสู่เว็บไซต์"
-          };
-        }
-        render();
-      });
 
       onAuthStateChanged(auth, async (user) => {
         if (!user && localStorage.getItem("zenith_discord_profile")) {
