@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zenith Drops — Key Giveaway</title>
+  <title>Zenith Giveaway — Key Giveaway</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <style>
     :root {
       --bg-top: #fbfaff;
@@ -46,13 +49,25 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     @keyframes modalPop {
-      from { opacity: 0; transform: scale(0.93) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from {
+        opacity: 0;
+        transform: scale(0.93) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     .modal-card {
@@ -115,7 +130,9 @@
       white-space: pre-line;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html {
       margin: 0;
@@ -133,7 +150,10 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    a { color: inherit; text-decoration: none; }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
     .container {
       width: 100%;
@@ -388,8 +408,13 @@
     }
 
     @keyframes marqueeScroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-100%);
+      }
     }
 
     .hero-card {
@@ -452,7 +477,9 @@
     }
 
     @media (max-width: 600px) {
-      .stats-row { grid-template-columns: 1fr; }
+      .stats-row {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Detail View */
@@ -471,7 +498,9 @@
       transition: color 0.15s;
     }
 
-    .back-link:hover { color: var(--accent-2); }
+    .back-link:hover {
+      color: var(--accent-2);
+    }
 
     .detail-card {
       background: var(--surface);
@@ -604,7 +633,10 @@
       border: 1px solid rgba(124, 58, 237, 0.24);
     }
 
-    .btn-sm:hover { background: #7c3aed; color: #fff; }
+    .btn-sm:hover {
+      background: #7c3aed;
+      color: #fff;
+    }
 
     .btn-danger {
       background: #fef2f2;
@@ -612,7 +644,10 @@
       border: 1px solid rgba(220, 38, 38, 0.25);
     }
 
-    .btn-danger:hover { background: #dc2626; color: #fff; }
+    .btn-danger:hover {
+      background: #dc2626;
+      color: #fff;
+    }
 
     /* Ended Dashed Box */
     .ended-box {
@@ -719,7 +754,8 @@
       color: var(--text-muted);
     }
 
-    .input, .textarea {
+    .input,
+    .textarea {
       width: 100%;
       padding: 11px 13px;
       border-radius: 10px;
@@ -732,7 +768,8 @@
       transition: border-color 0.15s, box-shadow 0.15s;
     }
 
-    .input:focus, .textarea:focus {
+    .input:focus,
+    .textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
     }
@@ -744,7 +781,8 @@
       font-size: 0.86rem;
     }
 
-    .input:focus, .textarea:focus {
+    .input:focus,
+    .textarea:focus {
       border-color: var(--accent-2);
     }
 
@@ -775,7 +813,10 @@
       border-radius: var(--radius);
     }
 
-    .muted { color: var(--text-muted); font-size: 0.88rem; }
+    .muted {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
 
     /* Rexzy-style ambient glow, grid, animations, skeleton, toast */
     body::before {
@@ -805,16 +846,31 @@
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
     }
 
-    .card, .detail-card, .inbox-item, .form-card {
+    .card,
+    .detail-card,
+    .inbox-item,
+    .form-card {
       animation: fadeUp 0.28s ease both;
       position: relative;
       overflow: hidden;
@@ -894,16 +950,37 @@
       animation: fadeUp 0.2s ease both;
     }
 
-    .toast.success { border-color: rgba(22, 163, 74, 0.45); color: #166534; }
-    .toast.error { border-color: rgba(220, 38, 38, 0.45); color: #991b1b; }
+    .toast.success {
+      border-color: rgba(22, 163, 74, 0.45);
+      color: #166534;
+    }
+
+    .toast.error {
+      border-color: rgba(220, 38, 38, 0.45);
+      color: #991b1b;
+    }
 
     @media (max-width: 520px) {
-      .navbar { gap: 8px; padding: 8px 10px; border-radius: 18px; }
-      .brand { border-right: none; padding-right: 0; width: 100%; justify-content: center; }
-      .detail-card { padding: 28px 18px; }
+      .navbar {
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 18px;
+      }
+
+      .brand {
+        border-right: none;
+        padding-right: 0;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .detail-card {
+        padding: 28px 18px;
+      }
     }
   </style>
 </head>
+
 <body>
   <header class="navbar-wrap">
     <nav class="navbar" aria-label="Primary">
@@ -1476,13 +1553,13 @@
       const listHtml = state.giveaways.length === 0
         ? `<div class="empty-state">ยังไม่มีงานแจก</div>`
         : state.giveaways.map((g) => {
-            const isRaffle = g.mode === "raffle";
-            const total = Number(g.total) || 0;
-            const left = Math.max(0, total - (Number(g.next) || 0));
-            const subInfo = isRaffle
-              ? `สุ่มผู้โชคดี (${g.winnerCount || 1} รางวัล)`
-              : `เหลือ ${left}/${total}`;
-            return `
+          const isRaffle = g.mode === "raffle";
+          const total = Number(g.total) || 0;
+          const left = Math.max(0, total - (Number(g.next) || 0));
+          const subInfo = isRaffle
+            ? `สุ่มผู้โชคดี (${g.winnerCount || 1} รางวัล)`
+            : `เหลือ ${left}/${total}`;
+          return `
               <div class="admin-row">
                 <div>
                   <div style="font-weight:600;">${esc(g.title)}</div>
@@ -1490,9 +1567,9 @@
                 </div>
                 <div class="admin-actions">
                   ${isRaffle
-                    ? `<button class="btn btn-sm" style="background:#fef3c7; border-color:rgba(217,119,6,0.4); color:#92400e;" data-draw="${esc(g.id)}">สุ่มประกาศผู้โชคดี</button>
+              ? `<button class="btn btn-sm" style="background:#fef3c7; border-color:rgba(217,119,6,0.4); color:#92400e;" data-draw="${esc(g.id)}">สุ่มประกาศผู้โชคดี</button>
                        ${Array.isArray(g.winners) && g.winners.length > 0 ? `<button class="btn btn-sm" data-reroll="${esc(g.id)}">Reroll</button>` : ""}`
-                    : `<button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>`}
+              : `<button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>`}
                   <button class="btn btn-sm" data-edit="${esc(g.id)}">แก้ไข</button>
                   <button class="btn btn-sm" data-toggle="${esc(g.id)}" data-open="${g.open ? "1" : "0"}">
                     ${g.open ? "ปิดงาน" : "เปิดงาน"}
@@ -1501,7 +1578,7 @@
                 </div>
               </div>
             `;
-          }).join("");
+        }).join("");
 
       return `
         <div class="page-header">
@@ -1523,10 +1600,10 @@
           </form>
 
           ${(() => {
-            if (!state.viewingKeys) return "";
-            const vk = state.viewingKeys;
-            const joined = vk.keys.join("\n");
-            return `
+          if (!state.viewingKeys) return "";
+          const vk = state.viewingKeys;
+          const joined = vk.keys.join("\n");
+          return `
               <div class="form-card" style="border-color: var(--border-strong);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
                   <h2 style="margin:0; font-size:1.05rem;">คีย์ที่ยังไม่ถูกแจก: ${esc(vk.title)} (${vk.keys.length} ชิ้น)</h2>
@@ -1536,17 +1613,17 @@
                   </div>
                 </div>
                 ${vk.keys.length === 0
-                  ? `<div class="muted">ไม่มีคีย์คงเหลือแล้ว</div>`
-                  : `<textarea class="textarea" readonly>${esc(joined)}</textarea>`}
+              ? `<div class="muted">ไม่มีคีย์คงเหลือแล้ว</div>`
+              : `<textarea class="textarea" readonly>${esc(joined)}</textarea>`}
               </div>
             `;
-          })()}
+        })()}
 
           ${(() => {
-            const editing = state.editingId ? state.giveaways.find((x) => x.id === state.editingId) : null;
-            if (!editing) return "";
-            const chipsText = Array.isArray(editing.chips) ? editing.chips.join(", ") : "";
-            return `
+          const editing = state.editingId ? state.giveaways.find((x) => x.id === state.editingId) : null;
+          if (!editing) return "";
+          const chipsText = Array.isArray(editing.chips) ? editing.chips.join(", ") : "";
+          return `
               <form id="editGiveawayForm" class="form-card" style="border-color: var(--border-strong);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                   <h2 style="margin:0; font-size:1.1rem;">แก้ไขงานแจก</h2>
@@ -1577,7 +1654,7 @@
                 </button>
               </form>
             `;
-          })()}
+        })()}
 
           <form id="createGiveawayForm" class="form-card">
             <h2 style="margin:0; font-size:1.1rem;">สร้างงานแจกใหม่</h2>
@@ -1605,13 +1682,13 @@
               <input id="gImage" class="input" placeholder="https://..." />
             </div>
             ${state.createMode === "raffle"
-              ? `
+          ? `
                 <div class="field">
                   <label for="gWinners">จำนวนผู้โชคดี</label>
                   <input id="gWinners" type="number" min="1" max="50" value="1" class="input" required />
                 </div>
               `
-              : `
+          : `
                 <div class="field">
                   <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
                   <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
@@ -1647,7 +1724,7 @@
         document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
       } else if (isRealSignedIn() && state.discordProfile) {
         el.innerHTML = `
-          <span class="pill" style="font-size:0.74rem; padding:3px 9px; background:#eef2ff; border-color:rgba(88,101,242,0.35); color:#4338ca;">@${esc(state.discordProfile.username)}</span>
+          <span class="pill" style="font-size:0.74rem; padding:4px 10px; background:#5865F2; border-color:#5865F2; color:#ffffff;">@${esc(state.discordProfile.username)}</span>
           <button id="navSignOutBtn" class="btn btn-sm" style="padding:5px 10px; font-size:0.78rem;">Sign out</button>
         `;
         document.getElementById("navSignOutBtn")?.addEventListener("click", handleUserSignOut);
@@ -1943,7 +2020,10 @@
       render();
 
       try {
-        await signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass);
+        await Promise.race([
+          signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("การเชื่อมต่อช้าเกินไป กรุณาลองใหม่อีกครั้ง")), 12000))
+        ]);
         state.statusMsg = { type: "success", text: "เข้าสู่ระบบแอดมินสำเร็จ" };
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
@@ -2445,7 +2525,7 @@
         if (!user && localStorage.getItem("zenith_discord_profile")) {
           try {
             await signInAnonymously(auth);
-          } catch {}
+          } catch { }
           return;
         }
         state.user = user || null;
@@ -2453,7 +2533,7 @@
           try {
             const cached = localStorage.getItem("zenith_discord_profile");
             if (cached) state.discordProfile = JSON.parse(cached);
-          } catch {}
+          } catch { }
         }
         if (user && user.email === ADMIN_EMAIL) {
           try {
@@ -2473,7 +2553,7 @@
           if (state.isPasswordAdmin) {
             getDoc(doc(db, "admin", "config")).then((s) => {
               if (s.exists()) state.webhookUrl = s.data().webhookUrl || "";
-            }).catch(() => {});
+            }).catch(() => { });
           }
         } else {
           if (unsubInbox) unsubInbox();
@@ -2494,4 +2574,5 @@
     boot();
   </script>
 </body>
+
 </html>
