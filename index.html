@@ -579,6 +579,127 @@
 
     .muted { color: var(--text-muted); font-size: 0.88rem; }
 
+    /* Rexzy-style ambient glow, grid, animations, skeleton, toast */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        radial-gradient(620px circle at 18% 8%, rgba(59, 130, 246, 0.16), transparent 60%),
+        radial-gradient(520px circle at 84% 22%, rgba(99, 102, 241, 0.12), transparent 62%),
+        radial-gradient(600px circle at 50% 95%, rgba(37, 99, 235, 0.12), transparent 65%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(96, 165, 250, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 165, 250, 0.03) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(ellipse at 50% 30%, #000 35%, transparent 85%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 35%, transparent 85%);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .card, .detail-card, .inbox-item, .form-card {
+      animation: fadeUp 0.28s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card.clickable::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(280px circle at 50% 0%, rgba(96, 165, 250, 0.14), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      pointer-events: none;
+    }
+
+    .card.clickable:hover {
+      transform: translateY(-4px);
+      border-color: rgba(96, 165, 250, 0.5);
+      box-shadow: 0 18px 42px rgba(37, 99, 235, 0.2), 0 0 0 1px rgba(96, 165, 250, 0.22);
+    }
+
+    .card.clickable:hover::before {
+      opacity: 1;
+    }
+
+    .btn-primary {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -120%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.5s ease;
+      pointer-events: none;
+    }
+
+    .btn-primary:hover:not(:disabled)::after {
+      left: 140%;
+    }
+
+    .skeleton-card {
+      height: 175px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(15, 26, 51, 0.6) 25%, rgba(30, 50, 92, 0.7) 50%, rgba(15, 26, 51, 0.6) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 11px 16px;
+      border-radius: 12px;
+      background: rgba(13, 24, 48, 0.94);
+      border: 1px solid var(--border-strong);
+      color: #eef3ff;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(12px);
+      animation: fadeUp 0.2s ease both;
+    }
+
+    .toast.success { border-color: rgba(34, 197, 94, 0.5); color: #bbf7d0; }
+    .toast.error { border-color: rgba(239, 68, 68, 0.5); color: #fecaca; }
+
     @media (max-width: 520px) {
       .navbar { gap: 8px; padding: 8px 10px; border-radius: 18px; }
       .brand { border-right: none; padding-right: 0; width: 100%; justify-content: center; }
@@ -605,6 +726,7 @@
   <main class="container" id="app">
     <div class="empty-state">กำลังโหลด...</div>
   </main>
+  <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -814,7 +936,17 @@
 
     function renderHome() {
       if (!state.giveawaysLoaded) {
-        return `<div class="empty-state">กำลังโหลดรายการงานแจก...</div>`;
+        return `
+          <div class="page-header">
+            <h1>Prizes & Giveaways</h1>
+            <p>กำลังโหลดรายการงานแจก...</p>
+          </div>
+          <div class="grid">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+        `;
       }
       if (state.giveaways.length === 0) {
         return `
@@ -1001,7 +1133,10 @@
 
       return `
         <div class="detail-wrap">
-          <a href="#" class="back-link">← กลับหน้ารวมงานแจก</a>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <a href="#" class="back-link" style="margin-bottom:0;">← กลับหน้ารวมงานแจก</a>
+            <button type="button" id="shareLinkBtn" class="btn btn-sm">แชร์ลิงก์</button>
+          </div>
           <div class="detail-card">
             <span class="pill">${esc(g.badge || "Giveaway")}</span>
             <h1 class="detail-title">${esc(g.title)}</h1>
@@ -1126,7 +1261,8 @@
                 </div>
                 <div class="admin-actions">
                   ${isRaffle
-                    ? `<button class="btn btn-sm" style="background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.45); color:#fde68a;" data-draw="${esc(g.id)}">สุ่มประกาศผู้โชคดี</button>`
+                    ? `<button class="btn btn-sm" style="background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.45); color:#fde68a;" data-draw="${esc(g.id)}">สุ่มประกาศผู้โชคดี</button>
+                       ${Array.isArray(g.winners) && g.winners.length > 0 ? `<button class="btn btn-sm" data-reroll="${esc(g.id)}">Reroll</button>` : ""}`
                     : `<button class="btn btn-sm" data-viewkeys="${esc(g.id)}">ดูคีย์คงเหลือ</button>`}
                   <button class="btn btn-sm" data-edit="${esc(g.id)}">แก้ไข</button>
                   <button class="btn btn-sm" data-toggle="${esc(g.id)}" data-open="${g.open ? "1" : "0"}">
@@ -1256,6 +1392,10 @@
                   <label for="gKeys">รายการคีย์ (1 บรรทัด = 1 ชิ้น)</label>
                   <textarea id="gKeys" class="textarea" placeholder="KEY-0001&#10;KEY-0002&#10;KEY-0003" required></textarea>
                 </div>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--text-muted); cursor:pointer;">
+                  <input type="checkbox" id="gShuffle" />
+                  <span>สุ่มลำดับคีย์ก่อนบันทึก (Shuffle Keys)</span>
+                </label>
               `}
             <button type="submit" class="btn btn-primary" style="max-width:none;" ${state.busyAdmin ? "disabled" : ""}>
               ${state.busyAdmin ? "กำลังบันทึก..." : "สร้างงานแจก"}
@@ -1313,6 +1453,57 @@
       bindViewEvents(route);
     }
 
+    function showToast(text, type = "success") {
+      const wrap = document.getElementById("toastWrap");
+      if (!wrap) return;
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.textContent = text;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    function launchConfetti() {
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100;";
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const colors = ["#60a5fa", "#3b82f6", "#22c55e", "#fde047", "#818cf8", "#f472b6"];
+      const pieces = Array.from({ length: 85 }, () => ({
+        x: canvas.width * (0.2 + Math.random() * 0.6),
+        y: canvas.height * 0.45,
+        vx: (Math.random() - 0.5) * 12,
+        vy: -Math.random() * 11 - 4,
+        w: 6 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.2,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+      let frame = 0;
+      function tick() {
+        frame++;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of pieces) {
+          p.vy += 0.32;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vrot;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if (frame < 110) requestAnimationFrame(tick);
+        else canvas.remove();
+      }
+      requestAnimationFrame(tick);
+    }
+
     function bindViewEvents(route) {
       document.querySelectorAll("[data-copy]").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -1321,9 +1512,10 @@
             await navigator.clipboard.writeText(val);
             const orig = btn.textContent;
             btn.textContent = "Copied!";
+            showToast("คัดลอกแล้ว!");
             setTimeout(() => { btn.textContent = orig; }, 1200);
           } catch {
-            alert("คัดลอกไม่สำเร็จ: " + val);
+            showToast("คัดลอกไม่สำเร็จ", "error");
           }
         });
       });
@@ -1355,6 +1547,14 @@
       }
 
       if (route.name === "detail") {
+        document.getElementById("shareLinkBtn")?.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            showToast("คัดลอกลิงก์งานแจกแล้ว!");
+          } catch {
+            showToast("คัดลอกลิงก์ไม่สำเร็จ", "error");
+          }
+        });
         document.getElementById("connectDiscordBtn")?.addEventListener("click", handleConnectDiscord);
         document.getElementById("joinRaffleBtn")?.addEventListener("click", () => handleJoinRaffle(route.id));
         const claimBtn = document.getElementById("claimBtn");
@@ -1394,7 +1594,10 @@
           });
         }
         document.querySelectorAll("[data-draw]").forEach((btn) => {
-          btn.addEventListener("click", () => handleDrawWinners(btn.getAttribute("data-draw")));
+          btn.addEventListener("click", () => handleDrawWinners(btn.getAttribute("data-draw"), false));
+        });
+        document.querySelectorAll("[data-reroll]").forEach((btn) => {
+          btn.addEventListener("click", () => handleDrawWinners(btn.getAttribute("data-reroll"), true));
         });
         document.querySelectorAll("[data-viewkeys]").forEach((btn) => {
           btn.addEventListener("click", () => handleViewRemainingKeys(btn.getAttribute("data-viewkeys")));
@@ -1498,6 +1701,8 @@
         if (!adminMode) {
           state.lastClaimMs = Date.now();
         }
+        launchConfetti();
+        showToast("รับคีย์สำเร็จ!");
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
       } finally {
@@ -1670,7 +1875,7 @@
       render();
     }
 
-    async function handleDrawWinners(gid) {
+    async function handleDrawWinners(gid, isReroll = false) {
       const target = state.giveaways.find((g) => g.id === gid);
       if (!target) return;
       state.statusMsg = null;
@@ -1679,7 +1884,12 @@
 
       try {
         const snap = await getDocs(collection(db, "giveaways", gid, "entries"));
-        const entries = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+        let entries = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+        if (isReroll && Array.isArray(target.winners) && target.winners.length > 0) {
+          const prevIds = new Set(target.winners.map((w) => w.discordId));
+          const remaining = entries.filter((e) => !prevIds.has(e.discordId));
+          if (remaining.length > 0) entries = remaining;
+        }
         if (entries.length === 0) {
           throw new Error("ยังไม่มีผู้เข้าร่วมในงานนี้");
         }
@@ -1706,18 +1916,19 @@
             body: JSON.stringify({
               content: winners.map((w) => `<@${w.discordId}>`).join(" "),
               embeds: [{
-                title: `ประกาศผู้โชคดี: ${target.title}`,
+                title: `${isReroll ? "Reroll ผู้โชคดีใหม่" : "ประกาศผู้โชคดี"}: ${target.title}`,
                 description: mentions,
                 color: 5793266,
-                footer: { text: `${target.badge || "Zenith Drops"} • ผู้เข้าร่วมทั้งหมด ${entries.length} คน` }
+                footer: { text: `${target.badge || "Zenith Drops"} • ผู้เข้าร่วมทั้งหมด ${snap.size} คน` }
               }]
             })
           });
         }
 
+        launchConfetti();
         state.statusMsg = {
           type: "success",
-          text: `สุ่มผู้โชคดี ${winners.length} คนสำเร็จ: ${winners.map((w) => "@" + w.discordUsername).join(", ")}`
+          text: `${isReroll ? "Reroll " : ""}สุ่มผู้โชคดี ${winners.length} คนสำเร็จ: ${winners.map((w) => "@" + w.discordUsername).join(", ")}`
         };
       } catch (err) {
         state.statusMsg = { type: "error", text: friendlyError(err) };
@@ -1769,10 +1980,18 @@
       }
 
       const keysRaw = document.getElementById("gKeys").value;
+      const shouldShuffle = Boolean(document.getElementById("gShuffle")?.checked);
       const keys = keysRaw
         .split(/\r?\n/)
         .map((s) => s.trim())
         .filter(Boolean);
+
+      if (shouldShuffle && keys.length > 1) {
+        for (let i = keys.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [keys[i], keys[j]] = [keys[j], keys[i]];
+        }
+      }
 
       if (!title || !badge || keys.length === 0) {
         state.statusMsg = { type: "error", text: "กรุณากรอกข้อมูลให้ครบและใส่คีย์อย่างน้อย 1 ชิ้น" };
