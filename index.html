@@ -1000,7 +1000,6 @@
   <main class="container" id="app">
     <div class="empty-state">กำลังโหลด...</div>
   </main>
-  <div id="modalRoot"></div>
   <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
   <script type="module">
@@ -1752,7 +1751,6 @@
 
       appEl.innerHTML = renderStatusBanner() + body;
       bindViewEvents(route);
-      renderModal();
     }
 
     function showToast(text, type = "success") {
