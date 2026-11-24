@@ -2020,6 +2020,9 @@
       render();
 
       try {
+        if (auth.currentUser) {
+          await signOut(auth);
+        }
         await Promise.race([
           signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass),
           new Promise((_, reject) => setTimeout(() => reject(new Error("การเชื่อมต่อช้าเกินไป กรุณาลองใหม่อีกครั้ง")), 12000))
@@ -2546,6 +2549,7 @@
           state.isPasswordAdmin = false;
         }
         state.authReady = true;
+        state.busyAdmin = false;
         if (user) {
           attachUserListeners(user.uid);
           const r = getRoute();
