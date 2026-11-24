@@ -986,7 +986,7 @@
     <nav class="navbar" aria-label="Primary">
       <a href="#" class="brand">
         <span class="brand-dot"></span>
-        <span>ZENITH DROPS</span>
+        <span>ZENITH Giveaways</span>
       </a>
       <div class="nav-links">
         <a href="#" class="nav-link" data-nav="prizes">Prizes</a>
@@ -1279,14 +1279,14 @@
       return `
         <div class="marquee-bar">
           <div class="marquee-track">
-            ZENITH DROPS • กดรับคีย์ฟรีทุก 24 ชั่วโมง • ล็อกอิน Discord เพื่อเข้าร่วมสุ่มผู้โชคดี • ขณะนี้มี ${totalOpen} งานแจกที่กำลังเปิดอยู่!
+            ZENITH Giveways • กดรับคีย์ฟรีทุก 24 ชั่วโมง • ล็อกอิน Discord เพื่อเข้าร่วมสุ่มผู้โชคดี • ขณะนี้มี ${totalOpen} งานแจกที่กำลังเปิดอยู่!
           </div>
         </div>
 
         <section class="hero-card">
           <div>
             <span class="pill">KEY GIVEAWAY & LUCKY DRAW</span>
-            <h1>ZENITH DROPS</h1>
+            <h1>ZENITH Giveways</h1>
             <p>ศูนย์รวมแจกคีย์ฟรีและกิจกรรมสุ่มผู้โชคดี เชื่อมต่อ Discord แล้วกดรับของรางวัลเข้ากล่อง Inbox ได้ทันที</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -2018,9 +2018,6 @@
       render();
 
       try {
-        if (auth.currentUser) {
-          await signOut(auth);
-        }
         await Promise.race([
           signInWithEmailAndPassword(auth, ADMIN_EMAIL, pass),
           new Promise((_, reject) => setTimeout(() => reject(new Error("การเชื่อมต่อช้าเกินไป กรุณาลองใหม่อีกครั้ง")), 12000))
@@ -2209,7 +2206,7 @@
                 title: `${isReroll ? "Reroll ผู้โชคดีใหม่" : "ประกาศผู้โชคดี"}: ${target.title}`,
                 description: mentions,
                 color: 5793266,
-                footer: { text: `${target.badge || "Zenith Drops"} • ผู้เข้าร่วมทั้งหมด ${snap.size} คน` }
+                footer: { text: `${target.badge || "rZenith Giveways"} • ผู้เข้าร่วมทั้งหมด ${snap.size} คน` }
               }]
             })
           });
@@ -2523,7 +2520,7 @@
       );
 
       onAuthStateChanged(auth, async (user) => {
-        if (!user && localStorage.getItem("zenith_discord_profile")) {
+        if (!user && !state.busyAdmin && localStorage.getItem("zenith_discord_profile")) {
           try {
             await signInAnonymously(auth);
           } catch { }
