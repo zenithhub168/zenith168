@@ -1255,9 +1255,12 @@
         const chipsHtml = (Array.isArray(g.chips) ? g.chips : [])
           .map((c) => `<span class="chip">${esc(c)}</span>`)
           .join("");
-        const rightMeta = isRaffle
-          ? (Array.isArray(g.winners) && g.winners.length > 0 ? `ประกาศผลแล้ว (${g.winners.length})` : `สุ่ม ${g.winnerCount || 1} รางวัล`)
-          : `${left} of ${total} left`;
+        const isScheduled = Boolean(g.open && g.startAtMs && Number(g.startAtMs) > Date.now());
+        const rightMeta = isScheduled
+          ? "รอเปิดตามเวลา"
+          : isRaffle
+            ? (Array.isArray(g.winners) && g.winners.length > 0 ? `ประกาศผลแล้ว (${g.winners.length})` : `สุ่ม ${g.winnerCount || 1} รางวัล`)
+            : `${left} of ${total} left`;
         const coverHtml = g.imageUrl
           ? `<img class="card-cover" src="${esc(g.imageUrl)}" alt="${esc(g.title)}" loading="lazy" />`
           : "";
@@ -1269,7 +1272,7 @@
             <h2 class="card-title">${esc(g.title)}</h2>
             ${chipsHtml ? `<div class="chips">${chipsHtml}</div>` : ""}
             <div class="card-meta">
-              <span class="pill ${isOpen ? "open" : "closed"}">${isOpen ? "Open" : "Closed"}</span>
+              <span class="pill ${isOpen ? (isScheduled ? "" : "open") : "closed"}">${isOpen ? (isScheduled ? "Soon" : "Open") : "Closed"}</span>
               <span>${rightMeta}</span>
             </div>
           </a>
@@ -1318,6 +1321,28 @@
           </div>
         </div>
         ${filtered.length === 0 ? `<div class="empty-state">ไม่พบงานแจกที่ตรงกับคำค้นหา</div>` : `<div class="grid">${cards}</div>`}
+
+        ${(() => {
+          const recentDraws = state.giveaways.filter((g) => g.mode === "raffle" && Array.isArray(g.winners) && g.winners.length > 0);
+          if (recentDraws.length === 0) return "";
+          const rows = recentDraws.slice(0, 6).map((g) => `
+            <a class="inbox-item" href="#g-${encodeURIComponent(g.id)}" style="display:block; transition:transform 0.15s;">
+              <div class="inbox-head">
+                <span class="inbox-title">${esc(g.title)}</span>
+                <span class="pill">${esc(g.badge || "Lucky Draw")}</span>
+              </div>
+              <div class="chips" style="margin-top:10px;">
+                ${g.winners.map((w, i) => `<span class="pill" style="background:#fef3c7; border-color:rgba(217,119,6,0.35); color:#92400e;">#${i + 1} @${esc(w.discordUsername)}</span>`).join("")}
+              </div>
+            </a>
+          `).join("");
+          return `
+            <section style="margin-top:34px;">
+              <h2 style="margin:0 0 14px; font-size:1.25rem; text-align:center;">กระดานผู้โชคดีล่าสุด (Recent Winners)</h2>
+              <div class="stack" style="max-width:none;">${rows}</div>
+            </section>
+          `;
+        })()}
       `;
     }
 
@@ -1356,9 +1381,17 @@
       const rInfo = state.raffleInfo[g.id] || { count: 0, joined: false };
       const winnersList = Array.isArray(g.winners) ? g.winners : [];
       const cdMs = getCooldownRemainingMs();
+      const startAtMs = Number(g.startAtMs) || 0;
+      const schedMs = (!isEnded && startAtMs > Date.now()) ? (startAtMs - Date.now()) : 0;
       let actionHtml = "";
 
-      if (isRaffle) {
+      if (schedMs > 0) {
+        actionHtml = `
+          <button id="schedBtn" class="btn btn-primary" data-start="${startAtMs}" disabled>
+            Opens in ${formatCountdown(schedMs)}
+          </button>
+        `;
+      } else if (isRaffle) {
         if (winnersList.length > 0) {
           actionHtml = `
             <div class="claimed-box" style="border-color:rgba(217,119,6,0.4); background:#fffbeb;">
@@ -1645,6 +1678,10 @@
                   <input id="eImage" class="input" placeholder="https://..." value="${esc(editing.imageUrl || "")}" />
                 </div>
                 <div class="field">
+                  <label for="eStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
+                  <input id="eStartAt" type="datetime-local" class="input" value="${editing.startAtMs ? new Date(Number(editing.startAtMs) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}" />
+                </div>
+                <div class="field">
                   <label for="eAddKeys">เพิ่มคีย์ใหม่ต่อท้าย (1 บรรทัด = 1 ชิ้น, เว้นว่างได้)</label>
                   <textarea id="eAddKeys" class="textarea" placeholder="ใส่เฉพาะคีย์ที่ต้องการเพิ่ม..."></textarea>
                 </div>
@@ -1679,6 +1716,10 @@
             <div class="field">
               <label for="gImage">ลิงก์รูปปกงานแจก (ไม่บังคับ)</label>
               <input id="gImage" class="input" placeholder="https://..." />
+            </div>
+            <div class="field">
+              <label for="gStartAt">ตั้งเวลาเริ่มแจก (เว้นว่าง = เปิดทันที)</label>
+              <input id="gStartAt" type="datetime-local" class="input" />
             </div>
             ${state.createMode === "raffle"
           ? `
@@ -2232,6 +2273,8 @@
       const badge = document.getElementById("gBadge").value.trim();
       const chipsRaw = document.getElementById("gChips").value;
       const imageUrl = document.getElementById("gImage")?.value.trim() || "";
+      const startAtVal = document.getElementById("gStartAt")?.value || "";
+      const startAtMs = startAtVal ? new Date(startAtVal).getTime() : 0;
       const chips = chipsRaw.split(",").map((s) => s.trim()).filter(Boolean);
 
       if (mode === "raffle") {
@@ -2251,6 +2294,7 @@
             badge,
             chips,
             imageUrl,
+            startAtMs,
             winnerCount,
             winners: [],
             total: 0,
@@ -2299,6 +2343,7 @@
           badge,
           chips,
           imageUrl,
+          startAtMs,
           total: keys.length,
           next: 0,
           open: true,
@@ -2345,6 +2390,8 @@
       const title = document.getElementById("eTitle").value.trim();
       const badge = document.getElementById("eBadge").value.trim();
       const imageUrl = document.getElementById("eImage")?.value.trim() || "";
+      const startAtVal = document.getElementById("eStartAt")?.value || "";
+      const startAtMs = startAtVal ? new Date(startAtVal).getTime() : 0;
       const chips = document.getElementById("eChips").value
         .split(",")
         .map((s) => s.trim())
@@ -2382,6 +2429,7 @@
           badge,
           chips,
           imageUrl,
+          startAtMs,
           total: oldTotal + addKeys.length
         });
 
@@ -2467,6 +2515,17 @@
       if (countdownTimer) clearInterval(countdownTimer);
       countdownTimer = setInterval(() => {
         if (getRoute().name !== "detail") return;
+        const schedBtn = document.getElementById("schedBtn");
+        if (schedBtn) {
+          const targetMs = Number(schedBtn.getAttribute("data-start")) || 0;
+          const diff = targetMs - Date.now();
+          if (diff > 0) {
+            schedBtn.textContent = `Opens in ${formatCountdown(diff)}`;
+          } else {
+            render();
+          }
+          return;
+        }
         const btn = document.getElementById("claimBtn");
         if (!btn) return;
         const cdMs = getCooldownRemainingMs();
